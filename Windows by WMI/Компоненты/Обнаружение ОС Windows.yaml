@@ -1,0 +1,171 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 1726a90674da432b878ef9742568d1d7
+      name: 'by d.bogach/Мониторинг Windows'
+  templates:
+    - uuid: 0f5e3eaf924f4f48b4c3b30136b0c146
+      template: 'OS Windows by WMI'
+      name: 'Обнаружение ОС Windows'
+      groups:
+        - name: 'by d.bogach/Мониторинг Windows'
+      items:
+        - uuid: f9d3334835e2420c9aeb96b12c655a1f
+          name: 'ОС Windows'
+          type: DEPENDENT
+          key: os_caption
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..Caption
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select Caption,InstallDate,LastBootUpTime,RegisteredUser,SerialNumber,Status,Version from Win32_OperatingSystem"]'
+        - uuid: f67f029490fe44cab4037f678219a5c1
+          name: 'ОС Windows: дата установки'
+          type: DEPENDENT
+          key: os_install_date
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..InstallDate
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: REGEX
+              parameters:
+                - '(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})'
+                - '\3.\2.\1 \4:\5:\6'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select Caption,InstallDate,LastBootUpTime,RegisteredUser,SerialNumber,Status,Version from Win32_OperatingSystem"]'
+        - uuid: 225003e30ada40ef8c4592160316dd36
+          name: 'ОС Windows: дата последнего запуска'
+          type: DEPENDENT
+          key: os_last_boot_time
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..LastBootUpTime
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: REGEX
+              parameters:
+                - '(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})'
+                - '\3.\2.\1 \4:\5:\6'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select Caption,InstallDate,LastBootUpTime,RegisteredUser,SerialNumber,Status,Version from Win32_OperatingSystem"]'
+        - uuid: 81f1abd96f974f95b675f1863eacc06c
+          name: 'ОС Windows: зарегистрированный пользователь'
+          type: DEPENDENT
+          key: os_registered_user
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..RegisteredUser
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select Caption,InstallDate,LastBootUpTime,RegisteredUser,SerialNumber,Status,Version from Win32_OperatingSystem"]'
+        - uuid: 6995af690853475895386f55e48e47b2
+          name: 'ОС Windows: серийный номер'
+          type: DEPENDENT
+          key: os_serial_number
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..SerialNumber
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select Caption,InstallDate,LastBootUpTime,RegisteredUser,SerialNumber,Status,Version from Win32_OperatingSystem"]'
+        - uuid: 19fe9c7fc553423cb169e6821b6314ae
+          name: 'ОС Windows: статус'
+          type: DEPENDENT
+          key: os_status
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..Status
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select Caption,InstallDate,LastBootUpTime,RegisteredUser,SerialNumber,Status,Version from Win32_OperatingSystem"]'
+        - uuid: bcf07c9ab06541aba582c3ee36e5ea71
+          name: 'ОС Windows: версия'
+          type: DEPENDENT
+          key: os_version
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..Version
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select Caption,InstallDate,LastBootUpTime,RegisteredUser,SerialNumber,Status,Version from Win32_OperatingSystem"]'
+        - uuid: 31c23723c89c48629a040b6d60765925
+          name: raw_os
+          key: 'wmi.getall[root\cimv2,"select Caption,InstallDate,LastBootUpTime,RegisteredUser,SerialNumber,Status,Version from Win32_OperatingSystem"]'
+          delay: 1h
+          history: '0'
+          value_type: TEXT
+          trends: '0'

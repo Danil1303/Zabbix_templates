@@ -1,0 +1,165 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 1726a90674da432b878ef9742568d1d7
+      name: 'by d.bogach/Мониторинг Windows'
+  templates:
+    - uuid: e4142b8426934dc6901c926d78deef5b
+      template: 'Battery by WMI'
+      name: 'Обнаружение батареи'
+      groups:
+        - name: 'by d.bogach/Мониторинг Windows'
+      items:
+        - uuid: 1fa5f5f8d65c49a2bd2c5bf25a9ff33f
+          name: 'Модель аккумулятора'
+          type: DEPENDENT
+          key: battery_name
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..Name
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_Battery"]'
+        - uuid: 69a5660ffdba4048b3ed7cef460d8932
+          name: 'Статус батареи'
+          type: DEPENDENT
+          key: battery_status
+          delay: '0'
+          history: 1w
+          trends: '0'
+          valuemap:
+            name: 'Статус батареи'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..BatteryStatus
+            - type: TRIM
+              parameters:
+                - '[]"'
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_Battery"]'
+        - uuid: f723987cc9ee4d40b8f496b9f21eff40
+          name: 'Номинальное напряжение на батарее'
+          type: DEPENDENT
+          key: design_voltage
+          delay: '0'
+          history: 1w
+          value_type: FLOAT
+          trends: '0'
+          units: V
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..DesignVoltage
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: MULTIPLIER
+              parameters:
+                - '0.001'
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_Battery"]'
+        - uuid: db626e7b6f13471998ab674bb25d378d
+          name: 'Заряд батареи'
+          type: DEPENDENT
+          key: estimated_charge_remaining
+          delay: '0'
+          history: 1w
+          trends: '0'
+          units: '%'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..EstimatedChargeRemaining
+            - type: TRIM
+              parameters:
+                - '[]"'
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_Battery"]'
+        - uuid: 850892b54c5e4be1b62872436dc88e2a
+          name: 'Расчётное время работы от батареи'
+          type: DEPENDENT
+          key: estimated_run_time
+          delay: '0'
+          history: 1w
+          trends: '0'
+          units: uptime
+          valuemap:
+            name: 'Заряд батареи'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..EstimatedRunTime
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: MULTIPLIER
+              parameters:
+                - '60'
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_Battery"]'
+        - uuid: cd9325bbec884160bb9a131f196ac11a
+          name: 'Статус батареи'
+          type: DEPENDENT
+          key: status_bat
+          delay: '0'
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..Status
+            - type: TRIM
+              parameters:
+                - '[]"'
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_Battery"]'
+        - uuid: 93b8f3e10c0a49aab863e8a8f80754ff
+          name: raw_battery
+          key: 'wmi.getall[root\cimv2,"select * from Win32_Battery"]'
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+      valuemaps:
+        - uuid: 8ec59201b3174792a1b58304a5404c8b
+          name: 'Заряд батареи'
+          mappings:
+            - type: GREATER_OR_EQUAL
+              value: '18000'
+              newvalue: 'Устройство заряжается'
+        - uuid: 59207e4a01fd4ec7a9ac94a96b4d1bc2
+          name: 'Статус батареи'
+          mappings:
+            - value: '1'
+              newvalue: Other
+            - value: '2'
+              newvalue: Unknown
+            - value: '3'
+              newvalue: 'Fully Charged'
+            - value: '4'
+              newvalue: Low
+            - value: '5'
+              newvalue: Critical
+            - value: '6'
+              newvalue: Charging
+            - value: '7'
+              newvalue: 'Charging and High'
+            - value: '8'
+              newvalue: 'Charging and Low'
+            - value: '9'
+              newvalue: 'Charging and Critical'
+            - value: '10'
+              newvalue: Undefined
+            - value: '11'
+              newvalue: 'Partially Charged'

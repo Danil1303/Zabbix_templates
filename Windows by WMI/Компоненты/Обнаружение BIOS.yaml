@@ -1,0 +1,485 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 1726a90674da432b878ef9742568d1d7
+      name: 'by d.bogach/Мониторинг Windows'
+  templates:
+    - uuid: bc996574b8114817916bd77f51941a72
+      template: 'BIOS by WMI'
+      name: 'Обнаружение BIOS'
+      groups:
+        - name: 'by d.bogach/Мониторинг Windows'
+      items:
+        - uuid: 0ab04df9dc2a4009af06d75aaefe0a60
+          name: 'BIOS: подпись'
+          type: DEPENDENT
+          key: bios_caption
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..Caption
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+        - uuid: 9ca4c380f71a4100bf5ba4b9ae1da622
+          name: 'BIOS: характеристики'
+          type: DEPENDENT
+          key: bios_characteristics
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          description: |
+            Reserved (0)
+            Reserved (1)
+            Unknown (2)
+            BIOS Characteristics Not Supported (3)
+            ISA is supported (4)
+            MCA is supported (5)
+            EISA is supported (6)
+            PCI is supported (7)
+            PC Card (PCMCIA) is supported (8)
+            Plug and Play is supported (9)
+            APM is supported (10)
+            BIOS is Upgradeable (Flash) (11)
+            BIOS is Upgradable (Flash)
+            BIOS shadowing is allowed (12)
+            VL-VESA is supported (13)
+            ESCD support is available (14)
+            Boot from CD is supported (15)
+            Selectable Boot is supported (16)
+            BIOS ROM is socketed (17)
+            Boot From PC Card (PCMCIA) is supported (18)
+            EDD (Enhanced Disk Drive) Specification is supported (19)
+            Int 13h - Japanese Floppy for NEC 9800 1.2mb (3.5\", 1k Bytes/Sector, 360 RPM) is supported (20)
+            Int 13h - Japanese Floppy for NEC 9800 1.2mb (3.5, 1k Bytes/Sector, 360 RPM) is supported
+            Int 13h - Japanese Floppy for Toshiba 1.2mb (3.5\", 360 RPM) is supported (21)
+            Int 13h - Japanese Floppy for Toshiba 1.2mb (3.5, 360 RPM) is supported
+            Int 13h - 5.25\" / 360 KB Floppy Services are supported (22)
+            Int 13h - 5.25 / 360 KB Floppy Services are supported
+            Int 13h - 5.25\" /1.2MB Floppy Services are supported (23)
+            Int 13h - 5.25 /1.2MB Floppy Services are supported
+            Int 13h - 3.5\" / 720 KB Floppy Services are supported (24)
+            Int 13h - 3.5 / 720 KB Floppy Services are supported
+            Int 13h - 3.5\" / 2.88 MB Floppy Services are supported (25)
+            Int 13h - 3.5 / 2.88 MB Floppy Services are supported
+            Int 5h, Print Screen Service is supported (26)
+            Int 9h, 8042 Keyboard services are supported (27)
+            Int 14h, Serial Services are supported (28)
+            Int 17h, printer services are supported (29)
+            Int 10h, CGA/Mono Video Services are supported (30)
+            NEC PC-98 (31)
+            ACPI supported (32)
+            ACPI is supported
+            USB Legacy is supported (33)
+            AGP is supported (34)
+            I2O boot is supported (35)
+            LS-120 boot is supported (36)
+            ATAPI ZIP Drive boot is supported (37)
+            1394 boot is supported (38)
+            Smart Battery supported (39)
+            Smart Battery is supported
+            40 47
+            Reserved for BIOS vendor
+            48 63
+            Reserved for system vendor
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..BiosCharacteristics
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+        - uuid: 84dc2319f78e4b4e8df0839786fff270
+          name: 'BIOS: текущий язык'
+          type: DEPENDENT
+          key: bios_current_language
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..CurrentLanguage
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+        - uuid: f1da0fc9bd5f45b491327a3bf774754e
+          name: 'BIOS: описание'
+          type: DEPENDENT
+          key: bios_description
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..Description
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+        - uuid: 601cdfdbd9ff4437bc9e9302ab8e9596
+          name: 'BIOS: список поддерживаемых языков'
+          type: DEPENDENT
+          key: bios_list_of_languages
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..ListOfLanguages
+            - type: TRIM
+              parameters:
+                - '[]'
+            - type: STR_REPLACE
+              parameters:
+                - '"'
+                - ''
+            - type: STR_REPLACE
+              parameters:
+                - ','
+                - ', '
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+        - uuid: 7ccf5a2229374776b75bae83e8a95950
+          name: 'BIOS: производитель'
+          type: DEPENDENT
+          key: bios_manufacturer
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..Manufacturer
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+        - uuid: 4f030a51edad4f0595e11cd678c1b6bf
+          name: 'BIOS: имя'
+          type: DEPENDENT
+          key: bios_name
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..Name
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+        - uuid: 0c4dbdd5fd1741d18207a82016f15148
+          name: 'BIOS: основной BIOS'
+          type: DEPENDENT
+          key: bios_primary
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..PrimaryBIOS
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+        - uuid: 69b6ebbc573f40c9810bcd84fc449770
+          name: 'BIOS: дата релиза'
+          type: DEPENDENT
+          key: bios_release_date
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..ReleaseDate
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: REGEX
+              parameters:
+                - '(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})'
+                - '\3.\2.\1 \4:\5:\6'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+        - uuid: a57d26807c5246b486a9dd1980759d67
+          name: 'BIOS: серийный номер'
+          type: DEPENDENT
+          key: bios_serial_number
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..SerialNumber
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+        - uuid: e3629b30aff34121ae2e0941347f0f64
+          name: 'BIOS: статус программного элемента'
+          type: DEPENDENT
+          key: bios_software_element_state
+          delay: '0'
+          history: 1d
+          trends: '0'
+          status: DISABLED
+          description: |
+            Deployable (0)
+            Installable (1)
+            Executable (2)
+            Running (3)
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..SoftwareElementState
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+        - uuid: 348957c61822425a89290663ace43444
+          name: 'BIOS: статус'
+          type: DEPENDENT
+          key: bios_status
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          description: |
+            OK ("OK")
+            Error ("Error")
+            Degraded ("Degraded")
+            Unknown ("Unknown")
+            Pred Fail ("Pred Fail")
+            Starting ("Starting")
+            Stopping ("Stopping")
+            Service ("Service")
+            Stressed ("Stressed")
+            NonRecover ("NonRecover")
+            No Contact ("No Contact")
+            Lost Comm ("Lost Comm")
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..Status
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+        - uuid: 86608398c99346f6bce2bc319854aabb
+          name: 'BIOS: целевая ОС'
+          type: DEPENDENT
+          key: bios_target_operating_system
+          delay: '0'
+          history: 1d
+          trends: '0'
+          status: DISABLED
+          description: |
+            Unknown (0)
+            Other (1)
+            MACOS (2)
+            ATTUNIX (3)
+            DGUX (4)
+            DECNT (5)
+            Digital Unix (6)
+            OpenVMS (7)
+            HPUX (8)
+            AIX (9)
+            MVS (10)
+            OS400 (11)
+            OS/2 (12)
+            JavaVM (13)
+            MSDOS (14)
+            WIN3x (15)
+            WIN95 (16)
+            WIN98 (17)
+            WINNT (18)
+            WINCE (19)
+            NCR3000 (20)
+            NetWare (21)
+            OSF (22)
+            DC/OS (23)
+            Reliant UNIX (24)
+            SCO UnixWare (25)
+            SCO OpenServer (26)
+            Sequent (27)
+            IRIX (28)
+            Solaris (29)
+            SunOS (30)
+            U6000 (31)
+            ASERIES (32)
+            TandemNSK (33)
+            TandemNT (34)
+            BS2000 (35)
+            LINUX (36)
+            Lynx (37)
+            XENIX (38)
+            VM/ESA (39)
+            Interactive UNIX (40)
+            BSDUNIX (41)
+            FreeBSD (42)
+            NetBSD (43)
+            GNU Hurd (44)
+            OS9 (45)
+            MACH Kernel (46)
+            Inferno (47)
+            QNX (48)
+            EPOC (49)
+            IxWorks (50)
+            VxWorks (51)
+            MiNT (52)
+            BeOS (53)
+            HP MPE (54)
+            NextStep (55)
+            PalmPilot (56)
+            Rhapsody (57)
+            Windows 2000 (58)
+            Dedicated (59)
+            VSE (60)
+            TPF (61)
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..TargetOperatingSystem
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+        - uuid: 059c787339864b40b986b60726c2cd1f
+          name: 'BIOS: версия'
+          type: DEPENDENT
+          key: bios_version
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..Version
+            - type: TRIM
+              parameters:
+                - '[]"'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+        - uuid: 24ce6fb952f54762aa84ad1fc11f1f29
+          name: 'BIOS: полная версия'
+          type: DEPENDENT
+          key: bios_version_all
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..BIOSVersion
+            - type: TRIM
+              parameters:
+                - '[]'
+            - type: STR_REPLACE
+              parameters:
+                - '"'
+                - ''
+            - type: STR_REPLACE
+              parameters:
+                - ','
+                - ', '
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+        - uuid: e977eb64fa09437e9297e83872892256
+          name: raw_bios
+          key: 'wmi.getall[root\cimv2,"select * from Win32_BIOS"]'
+          delay: 1h
+          history: '0'
+          value_type: TEXT
+          trends: '0'

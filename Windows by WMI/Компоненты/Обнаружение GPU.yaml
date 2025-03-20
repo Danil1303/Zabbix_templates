@@ -1,0 +1,448 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 1726a90674da432b878ef9742568d1d7
+      name: 'by d.bogach/Мониторинг Windows'
+  templates:
+    - uuid: 1e73192e5a4440e592a4b2e26a90b1f5
+      template: 'GPU by WMI'
+      name: 'Обнаружение GPU'
+      groups:
+        - name: 'by d.bogach/Мониторинг Windows'
+      items:
+        - uuid: df0b24389b6e48648075423f4adec55f
+          name: raw_gpu
+          key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+          delay: 1h
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+      discovery_rules:
+        - uuid: 5c3030a878ec405697c57804f90caa01
+          name: 'Обнаружение GPU'
+          type: DEPENDENT
+          key: gpu_discovery
+          delay: '0'
+          filter:
+            evaltype: OR
+            conditions:
+              - macro: '{#GPU_FILTER}'
+                value: amd
+                formulaid: A
+              - macro: '{#GPU_FILTER}'
+                value: intel
+                formulaid: B
+              - macro: '{#GPU_FILTER}'
+                value: nvidia
+                formulaid: C
+          item_prototypes:
+            - uuid: d25bfa0fec5b4038a8f529f1aad109a3
+              name: 'GPU {#GPU_NAME}: архитектура'
+              type: DEPENDENT
+              key: 'gpu_architecture["{#GPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              valuemap:
+                name: 'Архитектура GPU'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#GPU_ID}")].VideoArchitecture.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+            - uuid: c46cda4c1125491d8e110e80bec9806a
+              name: 'GPU {#GPU_NAME}: доступность'
+              type: DEPENDENT
+              key: 'gpu_availability["{#GPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: |
+                Other (1)
+                Unknown (2)
+                Running/Full Power (3)
+                Warning (4)
+                In Test (5)
+                Not Applicable (6)
+                Power Off (7)
+                Off Line (8)
+                Offline
+                Off Duty (9)
+                Degraded (10)
+                Not Installed (11)
+                Install Error (12)
+                Power Save - Unknown (13)
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#GPU_ID}")].Availability.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+            - uuid: 67c73443c51846d5941bfd5e151eae2a
+              name: 'GPU {#GPU_NAME}: подпись'
+              type: DEPENDENT
+              key: 'gpu_caption["{#GPU_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#GPU_ID}")].Caption.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+            - uuid: 9614bb61a2e14b4da22d73fca0982362
+              name: 'GPU {#GPU_NAME}: код ошибки'
+              type: DEPENDENT
+              key: 'gpu_config_manager_error_code["{#GPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              description: |
+                This device is working properly. (0)
+                This device is not configured correctly. (1)
+                Windows cannot load the driver for this device. (2)
+                The driver for this device might be corrupted, or your system may be running low on memory or other resources. (3)
+                This device is not working properly. One of its drivers or your registry might be corrupted. (4)
+                The driver for this device needs a resource that Windows cannot manage. (5)
+                The boot configuration for this device conflicts with other devices. (6)
+                Cannot filter. (7)
+                The driver loader for the device is missing. (8)
+                This device is not working properly because the controlling firmware is reporting the resources for the device incorrectly. (9)
+                This device cannot start. (10)
+                This device failed. (11)
+                This device cannot find enough free resources that it can use. (12)
+                Windows cannot verify this device's resources. (13)
+                This device cannot work properly until you restart your computer. (14)
+                This device is not working properly because there is probably a re-enumeration problem. (15)
+                Windows cannot identify all the resources this device uses. (16)
+                This device is asking for an unknown resource type. (17)
+                Reinstall the drivers for this device. (18)
+                Failure using the VxD loader. (19)
+                Your registry might be corrupted. (20)
+                System failure: Try changing the driver for this device. If that does not work, see your hardware documentation. Windows is removing this device. (21)
+                This device is disabled. (22)
+                System failure: Try changing the driver for this device. If that doesn't work, see your hardware documentation. (23)
+                This device is not present, is not working properly, or does not have all its drivers installed. (24)
+                Windows is still setting up this device. (25)
+                Windows is still setting up this device. (26)
+                This device does not have valid log configuration. (27)
+                The drivers for this device are not installed. (28)
+                This device is disabled because the firmware of the device did not give it the required resources. (29)
+                This device is using an Interrupt Request (IRQ) resource that another device is using. (30)
+                This device is not working properly because Windows cannot load the drivers required for this device. (31)
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#GPU_ID}")].ConfigManagerErrorCode.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+              trigger_prototypes:
+                - uuid: 9d9738ca341e45c98f5a006f1c9bfd71
+                  expression: 'last(/GPU by WMI/gpu_config_manager_error_code["{#GPU_ID}"])<>0'
+                  name: 'Ошибка GPU {#GPU_NAME}'
+                  priority: AVERAGE
+            - uuid: cd8414153545430893128d67d2bf186c
+              name: 'GPU {#GPU_NAME}: описание'
+              type: DEPENDENT
+              key: 'gpu_description["{#GPU_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#GPU_ID}")].Description.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+            - uuid: 69fd0fbe80ab4bf29bff9eb7ab7da853
+              name: 'GPU {#GPU_NAME}: дата релиза драйвера'
+              type: DEPENDENT
+              key: 'gpu_driver_date["{#GPU_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#GPU_ID}")].DriverDate.first()'
+                - type: REGEX
+                  parameters:
+                    - '(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})'
+                    - '\3.\2.\1 \4:\5:\6'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+            - uuid: ce15de909e5944cf8b2d64249b6457a8
+              name: 'GPU {#GPU_NAME}: версия драйвера'
+              type: DEPENDENT
+              key: 'gpu_driver_version["{#GPU_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#GPU_ID}")].DriverVersion.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+            - uuid: f5aa46c85d8c4f76a873630d1d8d1cb0
+              name: 'GPU {#GPU_NAME}: горизонтальное разрешение экрана'
+              type: DEPENDENT
+              key: 'gpu_horizontal_resolution["{#GPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#GPU_ID}")].CurrentHorizontalResolution.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+            - uuid: 830e7ffc8ae4417f87fe811415e8b1b0
+              name: 'GPU {#GPU_NAME}: тип памяти'
+              type: DEPENDENT
+              key: 'gpu_memory_type["{#GPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              valuemap:
+                name: 'Тип памяти'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#GPU_ID}")].VideoMemoryType.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+            - uuid: 82704791877b472991d482c3dfa05b4c
+              name: 'GPU {#GPU_NAME}: процессор'
+              type: DEPENDENT
+              key: 'gpu_processor["{#GPU_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#GPU_ID}")].VideoProcessor.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+            - uuid: 4add2244df7a43fc92ad129c5ff68488
+              name: 'GPU {#GPU_NAME}: RAM'
+              type: DEPENDENT
+              key: 'gpu_ram["{#GPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: B
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#GPU_ID}")].AdapterRAM.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+            - uuid: 40a3b48de1094335936fc5ddb8ce29a3
+              name: 'GPU {#GPU_NAME}: частота обновления экрана'
+              type: DEPENDENT
+              key: 'gpu_refresh_rate["{#GPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: Hz
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#GPU_ID}")].CurrentRefreshRate.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+            - uuid: a045e9e3edbc4bba9ac7678d031b31a2
+              name: 'GPU {#GPU_NAME}: статус'
+              type: DEPENDENT
+              key: 'gpu_status["{#GPU_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#GPU_ID}")].Status.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+            - uuid: 8c1429494722477a977afdef8f83cbf2
+              name: 'GPU {#GPU_NAME}: вертикальное разрешение экрана'
+              type: DEPENDENT
+              key: 'gpu_vertical_resolution["{#GPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#GPU_ID}")].CurrentVerticalResolution.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select AdapterRAM,Availability,Caption,ConfigManagerErrorCode,CurrentHorizontalResolution,CurrentRefreshRate,CurrentVerticalResolution,Description,DeviceID,DriverDate,DriverVersion,Name,Status,VideoArchitecture,VideoMemoryType,VideoProcessor from Win32_VideoController"]'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  function findBrandSubstring(inputString) {
+                      // Переводим входную строку в нижний регистр
+                      var lowerCaseString = inputString.toLowerCase();
+                  
+                      // Список брендов для поиска
+                      var brands = ["amd", "nvidia", "intel"];
+                  
+                      // Ищем каждый бренд в строке
+                      for (var i = 0; i < brands.length; i++) {
+                          var brand = brands[i];
+                          if (lowerCaseString.includes(brand)) {
+                              return brand;
+                          }
+                      }
+                  
+                      // Если ничего не найдено, возвращаем "other"
+                      return "other";
+                  }
+                  
+                  output = JSON.parse(value).map(function(gpu){
+                  	return {
+                                  "{#GPU_FILTER}": findBrandSubstring(gpu.Name),
+                                  "{#GPU_NAME}": gpu.Name.trim(),
+                                  "{#GPU_ID}": gpu.DeviceID
+                  	}})
+                  return JSON.stringify({"data": output})
+      valuemaps:
+        - uuid: 9983fb18ece0442e9ff98079d43bd26b
+          name: 'Архитектура GPU'
+          mappings:
+            - value: '1'
+              newvalue: Other
+            - value: '2'
+              newvalue: Unknown
+            - value: '3'
+              newvalue: CGA
+            - value: '4'
+              newvalue: EGA
+            - value: '5'
+              newvalue: VGA
+            - value: '6'
+              newvalue: SVGA
+            - value: '7'
+              newvalue: MDA
+            - value: '8'
+              newvalue: HGC
+            - value: '9'
+              newvalue: MCGA
+            - value: '10'
+              newvalue: 8514A
+            - value: '11'
+              newvalue: XGA
+            - value: '12'
+              newvalue: 'Linear Frame Buffer'
+            - value: '160'
+              newvalue: PC-98
+        - uuid: e8e55fbf90994d71b580b2666d31a850
+          name: 'Тип памяти'
+          mappings:
+            - value: '1'
+              newvalue: Other
+            - value: '2'
+              newvalue: Unknown
+            - value: '3'
+              newvalue: VRAM
+            - value: '4'
+              newvalue: DRAM
+            - value: '5'
+              newvalue: SRAM
+            - value: '6'
+              newvalue: WRAM
+            - value: '7'
+              newvalue: 'EDO RAM'
+            - value: '8'
+              newvalue: 'Burst Synchronous DRAM'
+            - value: '9'
+              newvalue: 'Pipelined Burst SRAM'
+            - value: '10'
+              newvalue: CDRAM
+            - value: '11'
+              newvalue: 3DRAM
+            - value: '12'
+              newvalue: SDRAM
+            - value: '13'
+              newvalue: SGRAM

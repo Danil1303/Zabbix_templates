@@ -1,0 +1,410 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 1726a90674da432b878ef9742568d1d7
+      name: 'by d.bogach/Мониторинг Windows'
+  templates:
+    - uuid: a1090d610a2a456498afec15dbcf63bb
+      template: 'CPU by WMI'
+      name: 'Обнаружение CPU'
+      groups:
+        - name: 'by d.bogach/Мониторинг Windows'
+      items:
+        - uuid: 35f1f02a3afa4762b34193a33e53d181
+          name: raw_cpu
+          key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+          delay: 1h
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+      discovery_rules:
+        - uuid: 3a3541ddc9654f22a001c04ba023da95
+          name: 'Обнаружение CPU'
+          type: DEPENDENT
+          key: cpu_discovery
+          delay: '0'
+          item_prototypes:
+            - uuid: 73eb03d2e7464ffc847ce22b8d561065
+              name: 'Процессор {#CPU_NAME}: архитектура'
+              type: DEPENDENT
+              key: 'cpu_architecture["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              valuemap:
+                name: 'Архитектура процессора'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].Architecture.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+            - uuid: 0c91a81153674bf1bef4671d5ad5a5ca
+              name: 'Процессор {#CPU_NAME}: доступность и статус'
+              type: DEPENDENT
+              key: 'cpu_availability["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              description: |
+                Other (1)
+                Unknown (2)
+                Running/Full Power (3)
+                Running or Full Power
+                Warning (4)
+                In Test (5)
+                Not Applicable (6)
+                Power Off (7)
+                Off Line (8)
+                Off Duty (9)
+                Degraded (10)
+                Not Installed (11)
+                Install Error (12)
+                Power Save - Unknown (13)
+                The device is known to be in a power save state, but its exact status is unknown.
+                Power Save - Low Power Mode (14)
+                The device is in a power save state, but is still functioning, and may exhibit decreased performance.
+                Power Save - Standby (15)
+                The device is not functioning, but can be brought to full power quickly.
+                Power Cycle (16)
+                Power Save - Warning (17)
+                The device is in a warning state, though also in a power save state.
+                Paused (18)
+                The device is paused.
+                Not Ready (19)
+                The device is not ready.
+                Not Configured (20)
+                The device is not configured.
+                Quiesced (21)
+                The device is quiet.
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].Availability.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+            - uuid: c696b32bcdaf4491b15d82d9b4b29da4
+              name: 'Процессор {#CPU_NAME}: базовая частота'
+              type: DEPENDENT
+              key: 'cpu_current_clock_speed["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: Hz
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].CurrentClockSpeed.first()'
+                - type: MULTIPLIER
+                  parameters:
+                    - '1000000'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+            - uuid: 19d08ed8b5134630bf4c9f581d39c814
+              name: 'Процессор {#CPU_NAME}: базовое напряжение'
+              type: DEPENDENT
+              key: 'cpu_current_voltage["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: FLOAT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: V
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].CurrentVoltage.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+            - uuid: ee2b71800e8c438bb1c68cb03db73a14
+              name: 'Процессор {#CPU_NAME}: описание'
+              type: DEPENDENT
+              key: 'cpu_description["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].Description.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+            - uuid: 95a6237eab2742a6844967475add145a
+              name: 'Процессор {#CPU_NAME}: частота внешнего таймера'
+              type: DEPENDENT
+              key: 'cpu_ext_clock["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: Hz
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].ExtClock.first()'
+                - type: MULTIPLIER
+                  parameters:
+                    - '1000000'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+            - uuid: f081cd24432944e297b610c672f60457
+              name: 'Процессор {#CPU_NAME}: объём кэша L2'
+              type: DEPENDENT
+              key: 'cpu_L2_cache_size["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: B
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].L2CacheSize.first()'
+                - type: MULTIPLIER
+                  parameters:
+                    - '1024'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+            - uuid: 7e6ff6bd3b4d4232a72f6a0be96b5d33
+              name: 'Процессор {#CPU_NAME}: объём кэша L3'
+              type: DEPENDENT
+              key: 'cpu_L3_cache_size["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: B
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].L3CacheSize.first()'
+                - type: MULTIPLIER
+                  parameters:
+                    - '1024'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+            - uuid: 8232f2cdb8a14f819061c0bb2d996762
+              name: 'Процессор {#CPU_NAME}: производитель'
+              type: DEPENDENT
+              key: 'cpu_manufacturer["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].Manufacturer,.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+            - uuid: 0ed215ce541342cb88fe23206181f6b6
+              name: 'Процессор {#CPU_NAME}: количество ядер'
+              type: DEPENDENT
+              key: 'cpu_number_of_cores["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].NumberOfCores.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+            - uuid: 2c9dcf3f60f84b21a7c661e11239ef1d
+              name: 'Процессор {#CPU_NAME}: количество потоков'
+              type: DEPENDENT
+              key: 'cpu_number_of_threads["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].ThreadCount.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+            - uuid: c675f1237be64393867afca3f938edf2
+              name: 'Процессор {#CPU_NAME}: номер партии'
+              type: DEPENDENT
+              key: 'cpu_part_number["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].PartNumber.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+            - uuid: 5e27acf337a04d8b9434ab95dba13aab
+              name: 'Процессор {#CPU_NAME}: серийный номер'
+              type: DEPENDENT
+              key: 'cpu_serial_number["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].SerialNumber.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+            - uuid: c33f7f2899e743ae956c825b03f990eb
+              name: 'Процессор {#CPU_NAME}: сокет'
+              type: DEPENDENT
+              key: 'cpu_socket["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].SocketDesignation.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+            - uuid: c9d6619366a341d6bcde1397657f6db4
+              name: 'Процессор {#CPU_NAME}: статус'
+              type: DEPENDENT
+              key: 'cpu_status["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: |
+                Unknown (0)
+                CPU Enabled (1)
+                CPU Disabled by User via BIOS Setup (2)
+                CPU Disabled By BIOS (POST Error) (3)
+                CPU is Idle (4)
+                Reserved (5)
+                Reserved (6)
+                Other (7)
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].CpuStatus.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+            - uuid: 847f5a88a25d4670a88133f704e97b06
+              name: 'Процессор {#CPU_NAME}: опция виртуализации'
+              type: DEPENDENT
+              key: 'cpu_virtualization_enabled["{#CPU_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#CPU_ID}")].VirtualizationFirmwareEnabled.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select Architecture,Availability,CpuStatus,CurrentClockSpeed,CurrentVoltage,Description,DeviceID,ExtClock,L2CacheSize,L3CacheSize,Manufacturer,Name,NumberOfCores,PartNumber,ProcessorId,Revision,SerialNumber,SocketDesignation,Status,ThreadCount,VirtualizationFirmwareEnabled from win32_Processor"]'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  output = JSON.parse(value).map(function(cpu){
+                  	return {
+                                  "{#CPU_NAME}": cpu.Name.trim(),
+                                  "{#CPU_ID}": cpu.DeviceID
+                  	}})
+                  return JSON.stringify({"data": output})
+      valuemaps:
+        - uuid: 23ee90d3937e476cbd5e6bd582560658
+          name: 'Архитектура процессора'
+          mappings:
+            - value: '0'
+              newvalue: x86
+            - value: '1'
+              newvalue: MIPS
+            - value: '2'
+              newvalue: Alpha
+            - value: '3'
+              newvalue: PowerPC
+            - value: '5'
+              newvalue: ARM
+            - value: '6'
+              newvalue: ia64
+            - value: '9'
+              newvalue: x64
+            - value: '12'
+              newvalue: ARM64

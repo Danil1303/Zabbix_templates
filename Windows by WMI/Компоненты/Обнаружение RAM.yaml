@@ -1,0 +1,362 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 1726a90674da432b878ef9742568d1d7
+      name: 'by d.bogach/Мониторинг Windows'
+  templates:
+    - uuid: 3b749c1fc61e451997da291032d85adc
+      template: 'RAM by WMI'
+      name: 'Обнаружение RAM'
+      groups:
+        - name: 'by d.bogach/Мониторинг Windows'
+      items:
+        - uuid: ca789ca406f24adebb3e29bcb689766a
+          name: raw_ram
+          key: 'wmi.getall[root\cimv2,"select Attributes,BankLabel,Capacity,ConfiguredClockSpeed,ConfiguredVoltage,DeviceLocator,FormFactor,Manufacturer,MemoryType,PartNumber,SerialNumber,SMBIOSMemoryType,Speed from Win32_PhysicalMemory"]'
+          delay: 1h
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+      discovery_rules:
+        - uuid: 578ae28b157d4ec197cd5dcf61d5d926
+          name: 'Обнаружение модулей RAM'
+          type: DEPENDENT
+          key: ram_discovery
+          delay: '0'
+          item_prototypes:
+            - uuid: e8346e77625f4826a71ab1c1118c92a9
+              name: 'Модуль RAM {#RAM_PART_NUMBER}: атрибуты'
+              type: DEPENDENT
+              key: 'ram_attributes["{#RAM_SERIAL_NUMBER}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.SerialNumber == "{#RAM_SERIAL_NUMBER}")].Attributes.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Attributes,BankLabel,Capacity,ConfiguredClockSpeed,ConfiguredVoltage,DeviceLocator,FormFactor,Manufacturer,MemoryType,PartNumber,SerialNumber,SMBIOSMemoryType,Speed from Win32_PhysicalMemory"]'
+            - uuid: 26f6e9a4750142b881df9ce4a62df724
+              name: 'Модуль RAM {#RAM_PART_NUMBER}: слот'
+              type: DEPENDENT
+              key: 'ram_bank_label["{#RAM_SERIAL_NUMBER}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.SerialNumber == "{#RAM_SERIAL_NUMBER}")].BankLabel.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Attributes,BankLabel,Capacity,ConfiguredClockSpeed,ConfiguredVoltage,DeviceLocator,FormFactor,Manufacturer,MemoryType,PartNumber,SerialNumber,SMBIOSMemoryType,Speed from Win32_PhysicalMemory"]'
+            - uuid: 2fad89e38fa04f35b5c0868a0973624c
+              name: 'Модуль RAM {#RAM_PART_NUMBER}: объём'
+              type: DEPENDENT
+              key: 'ram_capacity["{#RAM_SERIAL_NUMBER}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              units: B
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.SerialNumber == "{#RAM_SERIAL_NUMBER}")].Capacity.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Attributes,BankLabel,Capacity,ConfiguredClockSpeed,ConfiguredVoltage,DeviceLocator,FormFactor,Manufacturer,MemoryType,PartNumber,SerialNumber,SMBIOSMemoryType,Speed from Win32_PhysicalMemory"]'
+            - uuid: 1f8c313a18f74e1aa1a2816c610f30e2
+              name: 'Модуль RAM {#RAM_PART_NUMBER}: частота'
+              type: DEPENDENT
+              key: 'ram_configured_clock_speed["{#RAM_SERIAL_NUMBER}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: Hz
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.SerialNumber == "{#RAM_SERIAL_NUMBER}")].ConfiguredClockSpeed.first()'
+                - type: MULTIPLIER
+                  parameters:
+                    - '1000000'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Attributes,BankLabel,Capacity,ConfiguredClockSpeed,ConfiguredVoltage,DeviceLocator,FormFactor,Manufacturer,MemoryType,PartNumber,SerialNumber,SMBIOSMemoryType,Speed from Win32_PhysicalMemory"]'
+            - uuid: ad20e17c34694786ade6aaa68d68d451
+              name: 'Модуль RAM {#RAM_PART_NUMBER}: напряжение'
+              type: DEPENDENT
+              key: 'ram_configured_voltage["{#RAM_SERIAL_NUMBER}"]'
+              delay: '0'
+              history: 1d
+              value_type: FLOAT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: V
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.SerialNumber == "{#RAM_SERIAL_NUMBER}")].ConfiguredVoltage.first()'
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.001'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Attributes,BankLabel,Capacity,ConfiguredClockSpeed,ConfiguredVoltage,DeviceLocator,FormFactor,Manufacturer,MemoryType,PartNumber,SerialNumber,SMBIOSMemoryType,Speed from Win32_PhysicalMemory"]'
+            - uuid: 4d7c70a933c441c88eb77f4572810ac8
+              name: 'Модуль RAM {#RAM_PART_NUMBER}: форм-фактор памяти'
+              type: DEPENDENT
+              key: 'ram_form_factor["{#RAM_SERIAL_NUMBER}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: B
+              valuemap:
+                name: 'Форм-фактор памяти'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.SerialNumber == "{#RAM_SERIAL_NUMBER}")].FormFactor.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Attributes,BankLabel,Capacity,ConfiguredClockSpeed,ConfiguredVoltage,DeviceLocator,FormFactor,Manufacturer,MemoryType,PartNumber,SerialNumber,SMBIOSMemoryType,Speed from Win32_PhysicalMemory"]'
+            - uuid: 306882ed031e4e00b3f86a7b9ebabe5f
+              name: 'Модуль RAM {#RAM_PART_NUMBER}: канал'
+              type: DEPENDENT
+              key: 'ram_locator["{#RAM_SERIAL_NUMBER}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.SerialNumber == "{#RAM_SERIAL_NUMBER}")].DeviceLocator.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Attributes,BankLabel,Capacity,ConfiguredClockSpeed,ConfiguredVoltage,DeviceLocator,FormFactor,Manufacturer,MemoryType,PartNumber,SerialNumber,SMBIOSMemoryType,Speed from Win32_PhysicalMemory"]'
+            - uuid: b7260e74f85d45c0bfe5f47f41b2816b
+              name: 'Модуль RAM {#RAM_PART_NUMBER}: производитель'
+              type: DEPENDENT
+              key: 'ram_manufacturer["{#RAM_SERIAL_NUMBER}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.SerialNumber == "{#RAM_SERIAL_NUMBER}")].Manufacturer.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Attributes,BankLabel,Capacity,ConfiguredClockSpeed,ConfiguredVoltage,DeviceLocator,FormFactor,Manufacturer,MemoryType,PartNumber,SerialNumber,SMBIOSMemoryType,Speed from Win32_PhysicalMemory"]'
+            - uuid: 34f832477d9c4c1ab1ec9cf1b26a53d9
+              name: 'Модуль RAM {#RAM_PART_NUMBER}: тип памяти SMBIOS'
+              type: DEPENDENT
+              key: 'ram_SMBIOS_type["{#RAM_SERIAL_NUMBER}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: B
+              valuemap:
+                name: 'Тип памяти'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.SerialNumber == "{#RAM_SERIAL_NUMBER}")].SMBIOSMemoryType.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Attributes,BankLabel,Capacity,ConfiguredClockSpeed,ConfiguredVoltage,DeviceLocator,FormFactor,Manufacturer,MemoryType,PartNumber,SerialNumber,SMBIOSMemoryType,Speed from Win32_PhysicalMemory"]'
+            - uuid: e86c50acf61747de82b4850d7189701c
+              name: 'Модуль RAM {#RAM_PART_NUMBER}: скорость'
+              type: DEPENDENT
+              key: 'ram_speed["{#RAM_SERIAL_NUMBER}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: Hz
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.SerialNumber == "{#RAM_SERIAL_NUMBER}")].Speed.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Attributes,BankLabel,Capacity,ConfiguredClockSpeed,ConfiguredVoltage,DeviceLocator,FormFactor,Manufacturer,MemoryType,PartNumber,SerialNumber,SMBIOSMemoryType,Speed from Win32_PhysicalMemory"]'
+            - uuid: 4e2a16a9ccc84ef8ad5a9e4053cb1637
+              name: 'Модуль RAM {#RAM_PART_NUMBER}: тип памяти'
+              type: DEPENDENT
+              key: 'ram_type["{#RAM_SERIAL_NUMBER}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: B
+              valuemap:
+                name: 'Тип памяти'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.SerialNumber == "{#RAM_SERIAL_NUMBER}")].MemoryType.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Attributes,BankLabel,Capacity,ConfiguredClockSpeed,ConfiguredVoltage,DeviceLocator,FormFactor,Manufacturer,MemoryType,PartNumber,SerialNumber,SMBIOSMemoryType,Speed from Win32_PhysicalMemory"]'
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select Attributes,BankLabel,Capacity,ConfiguredClockSpeed,ConfiguredVoltage,DeviceLocator,FormFactor,Manufacturer,MemoryType,PartNumber,SerialNumber,SMBIOSMemoryType,Speed from Win32_PhysicalMemory"]'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  output = JSON.parse(value).map(function(ram){
+                  	return {
+                                  "{#RAM_PART_NUMBER}": ram.PartNumber.trim(),
+                                  "{#RAM_SERIAL_NUMBER}": ram.SerialNumber
+                  	}})
+                  return JSON.stringify({"data": output})
+      valuemaps:
+        - uuid: 3808010f97024d9dbd4190afb6bc97e8
+          name: 'Тип памяти'
+          mappings:
+            - value: '0'
+              newvalue: Unknown
+            - value: '1'
+              newvalue: Other
+            - value: '2'
+              newvalue: DRAM
+            - value: '3'
+              newvalue: 'Synchronous DRAM'
+            - value: '4'
+              newvalue: 'Cache DRAM'
+            - value: '5'
+              newvalue: EDO
+            - value: '6'
+              newvalue: EDRAM
+            - value: '7'
+              newvalue: VRAM
+            - value: '8'
+              newvalue: SRAM
+            - value: '9'
+              newvalue: RAM
+            - value: '10'
+              newvalue: ROM
+            - value: '11'
+              newvalue: Flash
+            - value: '12'
+              newvalue: EEPROM
+            - value: '13'
+              newvalue: FEPROM
+            - value: '14'
+              newvalue: EPROM
+            - value: '15'
+              newvalue: CDRAM
+            - value: '16'
+              newvalue: 3DRAM
+            - value: '17'
+              newvalue: SDRAM
+            - value: '18'
+              newvalue: SGRAM
+            - value: '19'
+              newvalue: RDRAM
+            - value: '20'
+              newvalue: DDR
+            - value: '21'
+              newvalue: DDR2
+            - value: '22'
+              newvalue: 'DDR2 FB-DIMM'
+            - value: '24'
+              newvalue: DDR3
+            - value: '25'
+              newvalue: FBD2
+            - value: '26'
+              newvalue: DDR4
+        - uuid: ed81117574c641d5b3aa73bf92ff95ea
+          name: 'Форм-фактор памяти'
+          mappings:
+            - value: '0'
+              newvalue: Unknown
+            - value: '1'
+              newvalue: Other
+            - value: '2'
+              newvalue: SIP
+            - value: '3'
+              newvalue: DIP
+            - value: '4'
+              newvalue: ZIP
+            - value: '5'
+              newvalue: SOJ
+            - value: '6'
+              newvalue: Proprietary
+            - value: '7'
+              newvalue: SIMM
+            - value: '8'
+              newvalue: DIMM
+            - value: '9'
+              newvalue: TSOP
+            - value: '10'
+              newvalue: PGA
+            - value: '11'
+              newvalue: RIMM
+            - value: '12'
+              newvalue: SODIMM
+            - value: '13'
+              newvalue: SRIMM
+            - value: '14'
+              newvalue: SMD
+            - value: '15'
+              newvalue: SSMP
+            - value: '16'
+              newvalue: QFP
+            - value: '17'
+              newvalue: TQFP
+            - value: '18'
+              newvalue: SOIC
+            - value: '19'
+              newvalue: LCC
+            - value: '20'
+              newvalue: PLCC
+            - value: '21'
+              newvalue: BGA
+            - value: '22'
+              newvalue: FPBGA
+            - value: '23'
+              newvalue: LGA

@@ -1,0 +1,112 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 1726a90674da432b878ef9742568d1d7
+      name: 'by d.bogach/Мониторинг Windows'
+  templates:
+    - uuid: 388647ea063444edbf04e50bcbd7241f
+      template: 'Motherboard by WMI'
+      name: 'Обнаружение материнской платы'
+      groups:
+        - name: 'by d.bogach/Мониторинг Windows'
+      items:
+        - uuid: 1011887b41fe43059b203721bcb371af
+          name: raw_mb
+          key: 'wmi.getall[root\cimv2,"select Manufacturer,Product,SerialNumber,Status,Version from Win32_BaseBoard"]'
+          delay: 1h
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+      discovery_rules:
+        - uuid: d694a62cc83b4cbdb6d484a90dc91a79
+          name: 'Обнаружение материнской платы'
+          type: DEPENDENT
+          key: mb_discovery
+          delay: '0'
+          item_prototypes:
+            - uuid: addfbc282caf410b8be77397f7d13d98
+              name: 'Материнская плата {#MB_PRODUCT}: производитель'
+              type: DEPENDENT
+              key: 'mb_manufacturer["{#MB_SERIAL_NUMBER}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.SerialNumber == "{#MB_SERIAL_NUMBER}")].Manufacturer.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Manufacturer,Product,SerialNumber,Status,Version from Win32_BaseBoard"]'
+            - uuid: 66cd2817d10048569f5c761fbb946656
+              name: 'Материнская плата {#MB_PRODUCT}: серийный номер'
+              type: DEPENDENT
+              key: 'mb_serial_number["{#MB_SERIAL_NUMBER}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.SerialNumber == "{#MB_SERIAL_NUMBER}")].SerialNumber.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Manufacturer,Product,SerialNumber,Status,Version from Win32_BaseBoard"]'
+            - uuid: eaddcda2e251456dad0a6dc0e1362857
+              name: 'Материнская плата {#MB_PRODUCT}: статус'
+              type: DEPENDENT
+              key: 'mb_status["{#MB_SERIAL_NUMBER}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.SerialNumber == "{#MB_SERIAL_NUMBER}")].Status.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Manufacturer,Product,SerialNumber,Status,Version from Win32_BaseBoard"]'
+            - uuid: 185c187206a14626bb51f04299432a3f
+              name: 'Материнская плата {#MB_PRODUCT}: версия'
+              type: DEPENDENT
+              key: 'mb_version["{#MB_SERIAL_NUMBER}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.SerialNumber == "{#MB_SERIAL_NUMBER}")].Version.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select Manufacturer,Product,SerialNumber,Status,Version from Win32_BaseBoard"]'
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select Manufacturer,Product,SerialNumber,Status,Version from Win32_BaseBoard"]'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  output = JSON.parse(value).map(function(mb){
+                  	return {
+                                  "{#MB_PRODUCT}": mb.Product.trim(),
+                                  "{#MB_SERIAL_NUMBER}": mb.SerialNumber
+                  	}})
+                  return JSON.stringify({"data": output})

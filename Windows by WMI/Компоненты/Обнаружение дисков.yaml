@@ -1,0 +1,222 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 1726a90674da432b878ef9742568d1d7
+      name: 'by d.bogach/Мониторинг Windows'
+  templates:
+    - uuid: cc84d89eca194dfdbaf84726d30c55a2
+      template: 'Disks by WMI'
+      name: 'Обнаружение дисков'
+      groups:
+        - name: 'by d.bogach/Мониторинг Windows'
+      items:
+        - uuid: 0a33224705cf48c38986a3848894cf1c
+          name: raw_disks
+          key: 'wmi.getall[root\cimv2,"select ConfigManagerErrorCode,DeviceID,FirmwareRevision,InterfaceType,Manufacturer,Model,SCSIPort,SerialNumber,Size,Status from Win32_DiskDrive"]'
+          delay: 1h
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+      discovery_rules:
+        - uuid: daf33490f13a4e60b5b7db17884ca5e8
+          name: 'Обнаружение дисков'
+          type: DEPENDENT
+          key: disk_discovery
+          delay: '0'
+          item_prototypes:
+            - uuid: f93294b9ae7b488da76982b4b8da27b6
+              name: 'Диск {#DISK_MODEL}: код ошибки'
+              type: DEPENDENT
+              key: 'disk_config_manager_error_code["{#DISK_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              description: |
+                This device is working properly. (0)
+                This device is not configured correctly. (1)
+                Windows cannot load the driver for this device. (2)
+                The driver for this device might be corrupted, or your system may be running low on memory or other resources. (3)
+                This device is not working properly. One of its drivers or your registry might be corrupted. (4)
+                The driver for this device needs a resource that Windows cannot manage. (5)
+                The boot configuration for this device conflicts with other devices. (6)
+                Cannot filter. (7)
+                The driver loader for the device is missing. (8)
+                This device is not working properly because the controlling firmware is reporting the resources for the device incorrectly. (9)
+                This device cannot start. (10)
+                This device failed. (11)
+                This device cannot find enough free resources that it can use. (12)
+                Windows cannot verify this device's resources. (13)
+                This device cannot work properly until you restart your computer. (14)
+                This device is not working properly because there is probably a re-enumeration problem. (15)
+                Windows cannot identify all the resources this device uses. (16)
+                This device is asking for an unknown resource type. (17)
+                Reinstall the drivers for this device. (18)
+                Failure using the VxD loader. (19)
+                Your registry might be corrupted. (20)
+                System failure: Try changing the driver for this device. If that does not work, see your hardware documentation. Windows is removing this device. (21)
+                This device is disabled. (22)
+                System failure: Try changing the driver for this device. If that doesn't work, see your hardware documentation. (23)
+                This device is not present, is not working properly, or does not have all its drivers installed. (24)
+                Windows is still setting up this device. (25)
+                Windows is still setting up this device. (26)
+                This device does not have valid log configuration. (27)
+                The drivers for this device are not installed. (28)
+                This device is disabled because the firmware of the device did not give it the required resources. (29)
+                This device is using an Interrupt Request (IRQ) resource that another device is using. (30)
+                This device is not working properly because Windows cannot load the drivers required for this device. (31)
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#DISK_ID}")].ConfigManagerErrorCode.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select ConfigManagerErrorCode,DeviceID,FirmwareRevision,InterfaceType,Manufacturer,Model,SCSIPort,SerialNumber,Size,Status from Win32_DiskDrive"]'
+              trigger_prototypes:
+                - uuid: 0fa84ce690e04ab69435e89a99fa73ce
+                  expression: 'last(/Disks by WMI/disk_config_manager_error_code["{#DISK_ID}"])<>0'
+                  name: 'Ошибка диска {#DISK_MODEL}'
+                  priority: AVERAGE
+            - uuid: 49981cdd1f4f4b49bf3e9925943dc0fb
+              name: 'Диск {#DISK_MODEL}: версия ПО'
+              type: DEPENDENT
+              key: 'disk_firmware["{#DISK_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#DISK_ID}")].FirmwareRevision.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select ConfigManagerErrorCode,DeviceID,FirmwareRevision,InterfaceType,Manufacturer,Model,SCSIPort,SerialNumber,Size,Status from Win32_DiskDrive"]'
+            - uuid: ddef3375b9be441f81ad88ef1f109901
+              name: 'Диск {#DISK_MODEL}: тип интерфейса'
+              type: DEPENDENT
+              key: 'disk_interface_type["{#DISK_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#DISK_ID}")].InterfaceType.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select ConfigManagerErrorCode,DeviceID,FirmwareRevision,InterfaceType,Manufacturer,Model,SCSIPort,SerialNumber,Size,Status from Win32_DiskDrive"]'
+            - uuid: 7347a49f8cdf4e05b8e08b6abc4b7980
+              name: 'Диск {#DISK_MODEL}: производитель'
+              type: DEPENDENT
+              key: 'disk_manufacturer["{#DISK_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#DISK_ID}")].Manufacturer.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select ConfigManagerErrorCode,DeviceID,FirmwareRevision,InterfaceType,Manufacturer,Model,SCSIPort,SerialNumber,Size,Status from Win32_DiskDrive"]'
+            - uuid: 5bee59954f6a40c39d5c363c50d40da9
+              name: 'Диск {#DISK_MODEL}: слот SCSI'
+              type: DEPENDENT
+              key: 'disk_SCSIPort["{#DISK_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#DISK_ID}")].SCSIPort.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select ConfigManagerErrorCode,DeviceID,FirmwareRevision,InterfaceType,Manufacturer,Model,SCSIPort,SerialNumber,Size,Status from Win32_DiskDrive"]'
+            - uuid: 2e6ecd1f8f654bcea5731f2b8013e427
+              name: 'Диск {#DISK_MODEL}: серийный номер'
+              type: DEPENDENT
+              key: 'disk_serial_number["{#DISK_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#DISK_ID}")].SerialNumber.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select ConfigManagerErrorCode,DeviceID,FirmwareRevision,InterfaceType,Manufacturer,Model,SCSIPort,SerialNumber,Size,Status from Win32_DiskDrive"]'
+            - uuid: e6adff936a204b72a512a81080585587
+              name: 'Диск {#DISK_MODEL}: объём'
+              type: DEPENDENT
+              key: 'disk_size["{#DISK_ID}"]'
+              delay: '0'
+              history: 1d
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: B
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#DISK_ID}")].Size.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select ConfigManagerErrorCode,DeviceID,FirmwareRevision,InterfaceType,Manufacturer,Model,SCSIPort,SerialNumber,Size,Status from Win32_DiskDrive"]'
+            - uuid: fe2086c9759845b79a576e0782106d12
+              name: 'Диск {#DISK_MODEL}: статус'
+              type: DEPENDENT
+              key: 'disk_status["{#DISK_ID}"]'
+              delay: '0'
+              history: 1d
+              value_type: TEXT
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.DeviceID == "{#DISK_ID}")].Status.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: 'wmi.getall[root\cimv2,"select ConfigManagerErrorCode,DeviceID,FirmwareRevision,InterfaceType,Manufacturer,Model,SCSIPort,SerialNumber,Size,Status from Win32_DiskDrive"]'
+          master_item:
+            key: 'wmi.getall[root\cimv2,"select ConfigManagerErrorCode,DeviceID,FirmwareRevision,InterfaceType,Manufacturer,Model,SCSIPort,SerialNumber,Size,Status from Win32_DiskDrive"]'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  output = JSON.parse(value).map(function(disk){
+                  	return {
+                                  "{#DISK_ID}": disk.DeviceID,
+                                  "{#DISK_MODEL}": disk.Model.trim()
+                  	}})
+                  return JSON.stringify({"data": output})
