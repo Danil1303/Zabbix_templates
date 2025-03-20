@@ -1,0 +1,1172 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 779d87df1e614c44b40fb6bff6a1970a
+      name: 'by d.bogach/Сетевое оборудование'
+    - uuid: 36bff6c29af64692839d077febfc7079
+      name: 'Templates/Network devices'
+  templates:
+    - uuid: 1580289ca8d74017ae850a41525f782a
+      template: router_teltonika
+      name: 'Маршрутизатор Teltonika'
+      groups:
+        - name: 'by d.bogach/Сетевое оборудование'
+        - name: 'Templates/Network devices'
+      items:
+        - uuid: 0b9b5df8f864430a8d152be449adc451
+          name: 'ID соты'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.2.21.0
+          key: CellID.0
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: 0f1054c2a2de4686a84f56ef018291e8
+          name: 'Тип соединения'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.2.8.0
+          key: ConnectionType.0
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          description: 'Тип соединения'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: aac84424e87a429092ee399fb2643d92
+          name: 'Версия ПО роутера'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.2.14.0
+          key: FirmwareVersion.0
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: bf4b5de0086649c3aa166d2b09af167f
+          name: 'Аппаратная ревизия роутера'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.1.10.0
+          key: HardwareRevision.0
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: 15529fcf738a4eb7842278e49961fd98
+          name: 'Время непрерывной работы устройства'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.25.1.1.0
+          key: host_uptime
+          history: 1w
+          trends: 90d
+          units: uptime
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+          triggers:
+            - uuid: e306974e4b8a472b88c0904afe4f4f91
+              expression: last(/router_teltonika/host_uptime)<35m
+              name: 'Устройство было перезапущено'
+              opdata: 'Время работы -{ITEM.LASTVALUE1}'
+              priority: WARNING
+        - uuid: 9604655b4db144b595d433644f83e3a0
+          name: 'Доступность ICMP'
+          type: SIMPLE
+          key: icmpping
+          history: 1w
+          trends: 90d
+          description: 'icmpping[,{$ICMP_PACKETS},{$ICMP_INTERVAL},{$ICMP_SIZE},{$ICMP_TIMEOUT}]'
+          triggers:
+            - uuid: c33df95b91d542bf94b998ce7361c6d6
+              expression: 'max(/router_teltonika/icmpping,#3)=0'
+              name: 'Хост недоступен (ICMP)'
+              opdata: 'ICMP{ITEM.LASTVALUE1}'
+              priority: DISASTER
+              manual_close: 'YES'
+        - uuid: f5d9a383767c4b50bafa24b2b22dedfd
+          name: 'Процент потери пакетов ICMP'
+          type: SIMPLE
+          key: icmppingloss
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: '%'
+        - uuid: a38887370f504e11b0187c1b5fc7086b
+          name: 'Время отклика ICMP'
+          type: SIMPLE
+          key: icmppingsec
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: s
+        - uuid: 5c91691d7bc446838de5c5eb9be2e421
+          name: 'IMSI модема'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.1.6.0
+          key: Imsi.0
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: 247bc1d2002449f1abdf0eb3f1517907
+          name: 'IP адрес на мобильном интерфейсе'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.2.18.0
+          key: MobileIP.0
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: 0f0efaa8835b4480b83084c7637b4b46
+          name: 'Время непрерывной работы мобильной сети'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.2.17.0
+          key: mobile_network_uptime
+          history: 1w
+          trends: 90d
+          units: uptime
+          triggers:
+            - uuid: 1bf47357294b4332829e96c305c2cea0
+              expression: last(/router_teltonika/mobile_network_uptime)<30m
+              name: 'Мобильная связь была переподключена'
+              opdata: 'Время работы -{ITEM.LASTVALUE1}'
+              priority: WARNING
+              dependencies:
+                - name: 'Устройство было перезапущено'
+                  expression: last(/router_teltonika/host_uptime)<35m
+        - uuid: 1abeae38bc8b498492038305f7841796
+          name: Модель
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.1.8.0
+          key: model
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          inventory_link: MODEL
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 93078aca4ca24568a86441e954a1d897
+          name: 'IMEI модема'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.1.1.0
+          key: ModemImei.0
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: 43a993e9afe44d1db9e97e30ff7684ec
+          name: 'Производитель модема'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.1.3.0
+          key: ModemManufacturer.0
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: d41c3b43e50f424ab509072106f076b1
+          name: 'Модель модема'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.1.2.0
+          key: ModemModel.0
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: 2d2f2f5616dc49c0b8248fd05cef478b
+          name: 'Серийный номер модема'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.1.5.0
+          key: ModemSerial.0
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: ecfa6956cb304a61baf51b2f09f1abeb
+          name: 'Количество локальных хостов по DHCP'
+          type: CALCULATED
+          key: number_of_local_hosts
+          history: 1d
+          trends: 90d
+          params: 'item_count(//mac_address[*])'
+        - uuid: b9a6eb1e459f40d08942bb5adb8d60d3
+          name: 'Оператор SIM-карты'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.2.5.0
+          key: Operator.0
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          description: 'Текущий оператор'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: e66897fb480243e1a2ffea2da37b79b8
+          name: 'Номер оператора (MCC+MNC)'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.2.6.0
+          key: OperatorNumber.0
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: ae2d76961a724436b3b88ccd30d07913
+          name: 'LTE RSRP'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.2.23.0
+          key: rsrp
+          history: 1w
+          value_type: FLOAT
+          trends: 90d
+          status: DISABLED
+          units: дБм
+          description: |
+            ≥ -80 дБм - отлично;
+            -80 дБм... -90 дБм - хорошо;
+            -90 дБм... -100 дБм - удовлетворительно;
+            ≤ -100 дБм - плохо.
+          preprocessing:
+            - type: CHECK_NOT_SUPPORTED
+              parameters:
+                - '-1'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
+          triggers:
+            - uuid: fd8fb3cb7632415886020e1992d2a7fc
+              expression: 'max(/router_teltonika/rsrp,5m)<{$MIN_LTE_RSRP}'
+              name: 'Низкий уровень LTE RSRP (< {$MIN_LTE_RSRP} дБм)'
+              priority: WARNING
+        - uuid: 7f17a62c3d9b4885a11bf683c5e2f894
+          name: 'LTE RSRQ'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.2.24.0
+          key: rsrq
+          history: 1w
+          value_type: FLOAT
+          trends: 90d
+          status: DISABLED
+          units: дБ
+          description: |
+            ≥ -10 дБ - отлично;
+            -10 дБ... -15 дБ - хорошо;
+            -15 дБ... -20 дБ - удовлетворительно;
+            ≤ -20 дБ - плохо.
+          preprocessing:
+            - type: CHECK_NOT_SUPPORTED
+              parameters:
+                - '-1'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
+          triggers:
+            - uuid: 0367f6bf996b47d2ab8bf5188079b78e
+              expression: 'max(/router_teltonika/rsrq,5m)<{$MIN_LTE_RSRQ}'
+              name: 'Низкий уровень LTE RSRQ (< {$MIN_LTE_RSRQ} дБ)'
+              priority: WARNING
+        - uuid: 33002ededb894a729cdaecd7b3e40e5f
+          name: 'LTE RSSI'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.2.4.0
+          key: rssi
+          history: 1w
+          value_type: FLOAT
+          trends: 90d
+          status: DISABLED
+          units: дБм
+          description: |
+            > -65 дБм - отлично;
+            -65 дБм... -75 дБм - хорошо;
+            -75 дБм... -85 дБм - удовлетворительно;
+            -85 дБм... -95 дБм - плохо;
+            ≤ -100 дБм - нет сигнала.
+          preprocessing:
+            - type: CHECK_NOT_SUPPORTED
+              parameters:
+                - '-1'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
+          triggers:
+            - uuid: 3fe115f4e8074cecb2954b277b68c819
+              expression: 'max(/router_teltonika/rssi,5m)<{$MIN_LTE_RSSI}'
+              name: 'Низкий уровень LTE RSSI (< {$MIN_LTE_RSSI} дБм)'
+              priority: WARNING
+        - uuid: 1e8f358db3b14c54a49e2a9e5f40b8f7
+          name: 'Статус подключения SIM-карты'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.2.7.0
+          key: sim_connection_state
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          description: 'Статус соединения'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: 4f259d98a9694bacb2a9d8bfbc376475
+          name: 'ICC SIM-карты'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.2.25.0
+          key: sim_icc
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: dced731116ae482bac5cbfa9ffe65cc9
+          name: 'Статус регистрации SIM-карты'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.2.3.0
+          key: sim_registgration_state
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: 50a7837a8b2643c3a3145b27b4cdb9e8
+          name: 'Статус SIM-карты'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.2.1.0
+          key: sim_state
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: af7d4df430d84a7b9a98e33efc705e2b
+          name: 'LTE SINR'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.48690.2.22.0
+          key: sinr
+          history: 1w
+          value_type: FLOAT
+          trends: 90d
+          status: DISABLED
+          units: дБ
+          description: |
+            ≥ 20 дБ - отлично;
+            13 дБ... 20 дБ - хорошо;
+            0 дБ... 13 дБ - удовлетворительно;
+            ≤ 0 дБ - потеря соединения.
+          preprocessing:
+            - type: CHECK_NOT_SUPPORTED
+              parameters:
+                - '-1'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
+          triggers:
+            - uuid: fd5908c8d76844b3ada8b16c8f3977a0
+              expression: 'max(/router_teltonika/sinr,5m)<{$MIN_LTE_SINR}'
+              name: 'Низкий уровень LTE SINR (< {$MIN_LTE_SINR} дБ)'
+              priority: WARNING
+        - uuid: 661bdf7369cd49b8b6f6f70e47ebdcb7
+          name: 'SNMP traps (fallback)'
+          type: SNMP_TRAP
+          key: snmptrap.fallback
+          delay: '0'
+          history: 1w
+          value_type: LOG
+          trends: '0'
+          status: DISABLED
+          logtimefmt: 'hh:mm:sszyyyy/MM/dd'
+        - uuid: 413a927b6b90454c9feb322d9e1e9a52
+          name: 'Контактная информация'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.4.0
+          key: sys_contact
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          inventory_link: CONTACT
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 59961e65c033490ab82d39d941c1a81e
+          name: Описание
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.1.0
+          key: sys_description
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          inventory_link: NOTES
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: c928b68d570046dbbdac8bceef087c06
+          name: Местоположение
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.6.0
+          key: sys_location
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          inventory_link: LOCATION
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 1ee069fc1b384983835bd970a739b00d
+          name: 'Имя хоста'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.5.0
+          key: sys_name
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          inventory_link: ALIAS
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: f69dff06836144ce8d1f491d980a055d
+          name: 'ID объекта'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.2.0
+          key: sys_object_id
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 68acde3b868f42b8bcc4b83eb221e94f
+          name: Сервисы
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.7.0
+          key: sys_services
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: CHECK_NOT_SUPPORTED
+              parameters:
+                - '-1'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: 'Не поддерживается'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: ef4c00f74adf400588bf4685dcdc843a
+          name: 'Время непрерывной работы службы SNMP'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.3.0
+          key: sys_uptime
+          history: 1w
+          trends: 90d
+          units: uptime
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+          triggers:
+            - uuid: 58d5df2c52d64f6482ba052f476a95b9
+              expression: last(/router_teltonika/sys_uptime)<30m
+              name: 'Служба SNMP была перезапущена'
+              opdata: 'Время работы -{ITEM.LASTVALUE1}'
+              priority: WARNING
+              dependencies:
+                - name: 'Устройство было перезапущено'
+                  expression: last(/router_teltonika/host_uptime)<35m
+        - uuid: ced3dc76f83e47cdb631782d4c4b1bc2
+          name: 'Доступность SNMP'
+          type: INTERNAL
+          key: 'zabbix[host,snmp,available]'
+          history: 1w
+          trends: 90d
+      discovery_rules:
+        - uuid: 21003f541d01426288a454eef40adf24
+          name: 'Подключённые хосты'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#MAC_ADDRESS},.1.3.6.1.2.1.4.35.1.5.12.1.4, {#UPTIME},.1.3.6.1.2.1.4.35.1.5.12.1.4]'
+          key: hosts_discovery
+          lifetime_type: DELETE_IMMEDIATELY
+          lifetime: '0'
+          item_prototypes:
+            - uuid: f522710c355f4b4bbb2259ba641b4fca
+              name: 'Локальный хост {#SNMPINDEX}: MAC-адрес'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.4.35.1.4.12.1.4.{#SNMPINDEX}'
+              key: 'mac_address[local_host_{#SNMPINDEX}]'
+              history: 1w
+              value_type: CHAR
+              trends: '0'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+            - uuid: a1ab7dd0d7864f538952efba476550cb
+              name: 'Локальный хост {#SNMPINDEX}: Время подключения'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.4.35.1.5.12.1.4.{#SNMPINDEX}'
+              key: 'uptime[local_host_{#SNMPINDEX}]'
+              history: 1d
+              trends: 1w
+              units: uptime
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+        - uuid: a9202fd50e824d249813c5649a4f2799
+          name: Интерфейсы
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#IFDESCR},.1.3.6.1.2.1.2.2.1.2,{#IFTYPE},.1.3.6.1.2.1.2.2.1.3,{#IFMTU},.1.3.6.1.2.1.2.2.1.4,{#IFSPEED},.1.3.6.1.2.1.2.2.1.5,{#IFPHYSADDRESS},.1.3.6.1.2.1.2.2.1.6,{#IFADMINSTATUS},.1.3.6.1.2.1.2.2.1.7,{#IFOPERSTATUS},.1.3.6.1.2.1.2.2.1.8,{#IFLASTCHANGE},.1.3.6.1.2.1.2.2.1.9,{#IFNAME},1.3.6.1.2.1.31.1.1.1.1, {#IFALIAS},1.3.6.1.2.1.31.1.1.1.18]'
+          key: interfaces_discovery
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#IFADMINSTATUS}'
+                value: '{$NET.IF.IFADMINSTATUS.MATCHES}'
+                formulaid: A
+              - macro: '{#IFADMINSTATUS}'
+                value: '{$NET.IF.IFADMINSTATUS.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: B
+              - macro: '{#IFALIAS}'
+                value: '{$NET.IF.IFALIAS.MATCHES}'
+                formulaid: C
+              - macro: '{#IFALIAS}'
+                value: '{$NET.IF.IFALIAS.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: D
+              - macro: '{#IFDESCR}'
+                value: '{$NET.IF.IFDESCR.MATCHES}'
+                formulaid: E
+              - macro: '{#IFDESCR}'
+                value: '{$NET.IF.IFDESCR.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: F
+              - macro: '{#IFNAME}'
+                value: '{$NET.IF.IFNAME.MATCHES}'
+                formulaid: G
+              - macro: '{#IFNAME}'
+                value: '{$NET.IF.IFNAME.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: H
+              - macro: '{#IFOPERSTATUS}'
+                value: '{$NET.IF.IFOPERSTATUS.MATCHES}'
+                formulaid: I
+              - macro: '{#IFOPERSTATUS}'
+                value: '{$NET.IF.IFOPERSTATUS.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: J
+              - macro: '{#IFTYPE}'
+                value: '{$NET.IF.IFTYPE.MATCHES}'
+                formulaid: K
+              - macro: '{#IFTYPE}'
+                value: '{$NET.IF.IFTYPE.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: L
+          item_prototypes:
+            - uuid: 6aaa87b3911a4a7eb36ad936a030b0f4
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Административное состояние'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.7.{#SNMPINDEX}'
+              key: 'admin_status[interface_№{#SNMPINDEX}]'
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+            - uuid: b86fb1d3914b41ef968f2f5c211325aa
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Описание'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.2.{#SNMPINDEX}'
+              key: 'description[interface_№{#SNMPINDEX}]'
+              delay: 1h
+              history: 1w
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+            - uuid: e61610a6b3794a01b2c0207c24bb3dc8
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifInDiscards'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.13.{#SNMPINDEX}'
+              key: 'in_discards[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество входящих, но отвергнутых пакетов, даже если не было обнаружено ошибок, мешающих доставке пакетов на верхний уровень стека сетевых протоколов. Одной из возможных причин для отвержения пакета могло быть освобождение места в буфере.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: aa0861d50f544d4aa0125ce24a996f2f
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifInErrors'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.14.{#SNMPINDEX}'
+              key: 'in_errors[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество входящих пакетов, полученных с ошибкой, из-за которой пакеты не были доставлены на верхний уровень стека сетевых протоколов.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 9efe9cea152d4989aa41be92eb01a12e
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifInNUcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.12.{#SNMPINDEX}'
+              key: 'in_n_ucast_pkts[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество пакетов НЕ одноадресной рассылки (broadcast и multicast), доставленных на верхний уровень стека сетевых протоколов.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: fb691f610fdc4dd6b8a0542bb0326497
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Входящий трафик (ifInOctets)'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.10.{#SNMPINDEX}'
+              key: 'in_octets[interface_№{#SNMPINDEX}]'
+              history: 1w
+              trends: 30d
+              units: bps
+              description: 'Полное число полученных байтов, включая символы заголовков.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+            - uuid: fb081bde0dda4634926d3e811d394184
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifInUcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.11.{#SNMPINDEX}'
+              key: 'in_ucast_pkts[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество пакетов одноадресной рассылки, доставленных на верхний уровень стека сетевых протоколов.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 3f78f15fc83c41b69ea2ffee4e18c645
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifInUnknownProtos'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.15.{#SNMPINDEX}'
+              key: 'in_unknown_protos[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество пакетов, полученных через интерфейс, но отвергнутых из-за неизвестного или не поддерживаемого протокола.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 4bcb14c5fc4a4af9bba2870fecc6b76a
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Последнее изменение'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.9.{#SNMPINDEX}'
+              key: 'last_change[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              value_type: FLOAT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: s
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+            - uuid: 9c0f10468b0a4011b90ff230e9c122f4
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Размер наибольшей получаемой/отправляемой датаграммы'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.4.{#SNMPINDEX}'
+              key: 'mtu[inteface_№{#SNMPINDEX}]'
+              delay: 1h
+              history: 1w
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: B
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+            - uuid: 044f2fffaebe416e962581b5b07b4eed
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Оперативное состояние'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.8.{#SNMPINDEX}'
+              key: 'oper_status[interface_№{#SNMPINDEX}]'
+              history: 1d
+              trends: 90d
+              trigger_prototypes:
+                - uuid: 21560d27df6c4e94bd2010dfea829081
+                  expression: |
+                    {$IFCONTROL:"{#IFNAME}"}=1 
+                    and 
+                    last(/router_teltonika/oper_status[interface_№{#SNMPINDEX}],#1)=2 
+                    and
+                    last(/router_teltonika/oper_status[interface_№{#SNMPINDEX}],#2)=2
+                    and 
+                    (last(/router_teltonika/oper_status[interface_№{#SNMPINDEX}],#2)<>last(/router_teltonika/oper_status[interface_№{#SNMPINDEX}],#3))
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: |
+                    last(/router_teltonika/oper_status[interface_№{#SNMPINDEX}])<>2 
+                    or 
+                    {$IFCONTROL:"{#IFNAME}"}=0
+                    or
+                    trendavg(/router_teltonika/oper_status[interface_№{#SNMPINDEX}],30d:now/d)=2
+                  name: 'Интерфейс {#IFNAME}({#IFALIAS}): пропал линк'
+                  opdata: '{ITEM.LASTVALUE1}'
+                  priority: AVERAGE
+                  manual_close: 'YES'
+            - uuid: 4ebe6ff400e549598eff6e58714dd7dd
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifOutDiscards'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.19.{#SNMPINDEX}'
+              key: 'out_discards[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество исходящих пакетов, которые были отвергнуты даже если не было обнаружено ошибок, мешающих отправке. Одной из возможных причин отвержения пакета могло быть освобождение места в буфере.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 4f51374a0f7243b1bbca41db36839a2c
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifOutErrors'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.20.{#SNMPINDEX}'
+              key: 'out_errors[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество исходящих пакетов, которые не могут быть отправлены из-за ошибок.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: be4bc1a59bde4e0f91a4c161a179b073
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifOutNUcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.18.{#SNMPINDEX}'
+              key: 'out_n_ucast_pkts[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Полное количество пакетов, которые пытался отправить верхний уровень стека сетевых протоколов, и которые адресованы на broadcast или multicast адреса на этом суб-уровне, включая те, которые были отвергнуты или не отправлены.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: b876b949986840738ed9287713943d08
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Исходящий трафик (ifOutOctets)'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.16.{#SNMPINDEX}'
+              key: 'out_octets[interface_№{#SNMPINDEX}]'
+              history: 1w
+              trends: 30d
+              units: bps
+              description: 'Полное количество отправленных октетов с интерфейса, включая символы заголовков.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+            - uuid: d087abf9dc264593ad18714c2084d3e7
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifOutQLen'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.21.{#SNMPINDEX}'
+              key: 'out_qlen[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              description: 'Длина очереди исходящих пакетов (в пакетах).'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 27a651c3bc6844a6856a03ba01f00131
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifOutUcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.17.{#SNMPINDEX}'
+              key: 'out_ucast_pkts[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Полное количество пакетов, которые пытался отправить верхний уровень стека сетевых протоколов, и которые адресованы НЕ на broadcast или multicast адреса на этом суб-уровне, включая те, которые были отвергнуты или не отправлены.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 2f251df1fc8349a38b70a22c707b216e
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): MAC адрес'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.6.{#SNMPINDEX}'
+              key: 'phys_address[interface_№{#SNMPINDEX}]'
+              delay: 1h
+              history: 1w
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+            - uuid: 74158fdb3569419083f98e7ce97c3b32
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Пропускная способность'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.5.{#SNMPINDEX}'
+              key: 'speed[interface_№{#SNMPINDEX}]'
+              delay: 1h
+              history: 1w
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+            - uuid: 9013fc09915543af9e1ec7077f9aab68
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Тип'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.3.{#SNMPINDEX}'
+              key: 'type[interface_№{#SNMPINDEX}]'
+              delay: 1h
+              history: 1w
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+          graph_prototypes:
+            - uuid: 83ad89ae97274996b50677b4c936f850
+              name: 'Административный статус интерфейса {#IFNAME}({#IFALIAS})'
+              yaxismin: '0.5'
+              yaxismax: '2.5'
+              show_triggers: 'NO'
+              ymin_type_1: FIXED
+              ymax_type_1: FIXED
+              graph_items:
+                - color: 1A7C11
+                  calc_fnc: ALL
+                  item:
+                    host: router_teltonika
+                    key: 'admin_status[interface_№{#SNMPINDEX}]'
+            - uuid: 797feedf9cf54df591d9d6a3a2404ca6
+              name: 'Оперативный статус интерфейса {#IFNAME}({#IFALIAS})'
+              yaxismin: '0.5'
+              yaxismax: '2.5'
+              show_triggers: 'NO'
+              ymin_type_1: FIXED
+              ymax_type_1: FIXED
+              graph_items:
+                - color: 1A7C11
+                  calc_fnc: ALL
+                  item:
+                    host: router_teltonika
+                    key: 'oper_status[interface_№{#SNMPINDEX}]'
+            - uuid: 038629eae75b416dadb542cc92c53714
+              name: 'Сетевой трафик на интерфейсе {#IFNAME}({#IFALIAS})'
+              show_triggers: 'NO'
+              ymin_type_1: FIXED
+              graph_items:
+                - drawtype: FILLED_REGION
+                  color: AED581
+                  calc_fnc: ALL
+                  item:
+                    host: router_teltonika
+                    key: 'in_octets[interface_№{#SNMPINDEX}]'
+                - sortorder: '1'
+                  drawtype: FILLED_REGION
+                  color: AFB42B
+                  calc_fnc: ALL
+                  item:
+                    host: router_teltonika
+                    key: 'out_octets[interface_№{#SNMPINDEX}]'
+  triggers:
+    - uuid: 3e457ef7886546c3bf4fd2ca27e96544
+      expression: |
+        min(/router_teltonika/icmpping,#3)=1
+        and
+        max(/router_teltonika/zabbix[host,snmp,available],#5)=0
+      name: 'SNMP недоступен'
+      opdata: 'SNMP{ITEM.LASTVALUE2}'
+      priority: HIGH
+      dependencies:
+        - name: 'Хост недоступен (ICMP)'
+          expression: 'max(/router_teltonika/icmpping,#3)=0'
+    - uuid: ca14a74e539944868c3dce855ded8d11
+      expression: |
+        last(/router_teltonika/icmpping,#5)=1
+        and
+        avg(/router_teltonika/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/router_teltonika/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+    - uuid: 1c8a5cc6b90045d998cd50eb0f289f53
+      expression: |
+        last(/router_teltonika/icmpping,#5)=1
+        and
+        avg(/router_teltonika/icmppingsec,#5)>{$WARN_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/router_teltonika/icmppingsec,#5)<{$WARN_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$WARN_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+          expression: |
+            last(/router_teltonika/icmpping,#5)=1
+            and
+            avg(/router_teltonika/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+          recovery_expression: 'avg(/router_teltonika/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+    - uuid: b4c76e114e6545b09cb5d848a52f1e4c
+      expression: |
+        last(/router_teltonika/icmpping,#5)=1
+        and
+        avg(/router_teltonika/icmppingloss,#5)>{$AVG_PING_LOSS}
+        and
+        avg(/router_teltonika/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/router_teltonika/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+      name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+      dependencies:
+        - name: 'Хост недоступен (ICMP)'
+          expression: 'max(/router_teltonika/icmpping,#3)=0'
+    - uuid: 73678bc2fe4948f3b0a3621e62f0afff
+      expression: |
+        last(/router_teltonika/icmpping,#5)=1
+        and
+        avg(/router_teltonika/icmppingloss,#5)>{$WARN_PING_LOSS}
+        and
+        avg(/router_teltonika/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/router_teltonika/icmppingloss,#5)=0'
+      name: 'Средний процент потери пакетов ICMP свыше {$WARN_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+          expression: |
+            last(/router_teltonika/icmpping,#5)=1
+            and
+            avg(/router_teltonika/icmppingloss,#5)>{$AVG_PING_LOSS}
+            and
+            avg(/router_teltonika/icmppingloss,#5)<100
+          recovery_expression: 'avg(/router_teltonika/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+  graphs:
+    - uuid: 07c6135b73f34298be362039422c2e90
+      name: '1. ICMP loss'
+      show_triggers: 'NO'
+      graph_items:
+        - color: F44336
+          calc_fnc: ALL
+          item:
+            host: router_teltonika
+            key: icmppingloss
+    - uuid: 80b266efbf254de881c9f75bbdd673d3
+      name: 'Время непрерывной работы устройства'
+      show_triggers: 'NO'
+      graph_items:
+        - drawtype: FILLED_REGION
+          color: 0040FF
+          calc_fnc: ALL
+          item:
+            host: router_teltonika
+            key: host_uptime
+    - uuid: b9cce07c465841fe804a60ba14c41e68
+      name: 'Время отклика ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: router_teltonika
+            key: icmppingsec
+    - uuid: e2a43a62d17045518376e4007378f2ee
+      name: 'Доступность ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: router_teltonika
+            key: icmpping
+    - uuid: abddde97c46041689fba644589f9a78a
+      name: 'Доступность SNMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: router_teltonika
+            key: 'zabbix[host,snmp,available]'
+    - uuid: 89e568ab22ef4b0297e84145e387c2fc
+      name: 'Количество локальных хостов'
+      show_triggers: 'NO'
+      graph_items:
+        - drawtype: FILLED_REGION
+          color: 7CB342
+          calc_fnc: ALL
+          item:
+            host: router_teltonika
+            key: number_of_local_hosts
+    - uuid: 99cd57b98d474074b7afa80065accf80
+      name: 'Метрика LTE RSRP'
+      graph_items:
+        - sortorder: '1'
+          color: FF0000
+          item:
+            host: router_teltonika
+            key: rsrp
+    - uuid: 2bbc69adedf64cc4ab16235284734fc7
+      name: 'Метрика LTE RSRQ'
+      graph_items:
+        - sortorder: '1'
+          color: FF0080
+          item:
+            host: router_teltonika
+            key: rsrq
+    - uuid: 80460a2513b24196a2d1803717d3ada5
+      name: 'Метрика LTE RSSI'
+      graph_items:
+        - sortorder: '1'
+          color: FF0000
+          item:
+            host: router_teltonika
+            key: rssi
+    - uuid: 63d4445bd400493c91502aa2f49c73c7
+      name: 'Метрика LTE SINR'
+      graph_items:
+        - sortorder: '1'
+          color: BF00FF
+          item:
+            host: router_teltonika
+            key: sinr
+    - uuid: bd67c4256fd942b28b92b494ef08e6af
+      name: 'Процент потери пакетов ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: router_teltonika
+            key: icmppingloss

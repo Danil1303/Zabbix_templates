@@ -1,0 +1,199 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: fad0b20d285543ee95b06a013cff3132
+      name: 'by d.bogach'
+  templates:
+    - uuid: b4533f26538a4cec9b7bfe1a21c7e594
+      template: 'NUT UPS'
+      name: 'NUT UPS'
+      groups:
+        - name: 'by d.bogach'
+      items:
+        - uuid: 152ea02552c14b55b8dde655251689c4
+          name: 'Заряд батареи'
+          type: DEPENDENT
+          key: battery_charge
+          delay: '0'
+          history: 7d
+          trends: 30d
+          units: '%'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'battery.charge:(.*)'
+                - \1
+          master_item:
+            key: get_ups_data
+        - uuid: 57aeb22c5811430eab27f99e9267ba74
+          name: 'Напряжение на батарее'
+          type: DEPENDENT
+          key: battery_voltage
+          delay: '0'
+          history: 1d
+          value_type: FLOAT
+          trends: 7d
+          units: В
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'battery.voltage:(.*)'
+                - \1
+          master_item:
+            key: get_ups_data
+        - uuid: 1b97c1f5d1f5401b895e075e028d238f
+          name: ups_data
+          key: get_ups_data
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+        - uuid: f3b510614aa74330b7ab286998d112be
+          name: 'Сила тока на входе'
+          type: DEPENDENT
+          key: input_current
+          delay: '0'
+          history: 1d
+          value_type: FLOAT
+          trends: 7d
+          units: А
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'input.current.nominal:(.*)'
+                - \1
+          master_item:
+            key: get_ups_data
+        - uuid: c65ef8a595494f6d955903f0deac6002
+          name: 'Частота тока на входе'
+          type: DEPENDENT
+          key: input_frequency
+          delay: '0'
+          history: 1d
+          value_type: FLOAT
+          trends: 7d
+          units: Гц
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'input.frequency:(.*)'
+                - \1
+          master_item:
+            key: get_ups_data
+        - uuid: df9259e2285b42b5bfed3c80fd04a511
+          name: 'Напряжение на входе'
+          type: DEPENDENT
+          key: input_voltage
+          delay: '0'
+          history: 1d
+          value_type: FLOAT
+          trends: 7d
+          units: В
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'input.voltage:(.*)'
+                - \1
+          master_item:
+            key: get_ups_data
+        - uuid: 7fe01c84ce7b418c9cd3ceb175055e6b
+          name: 'Напряжение на выходе'
+          type: DEPENDENT
+          key: output_voltage
+          delay: '0'
+          history: 1d
+          value_type: FLOAT
+          trends: 7d
+          units: В
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'output.voltage:(.*)'
+                - \1
+          master_item:
+            key: get_ups_data
+        - uuid: d5a076b7332145cfbda0e2c62de178b4
+          name: 'Нагрузка на ИБП'
+          type: DEPENDENT
+          key: ups_load
+          delay: '0'
+          history: 7d
+          trends: 30d
+          units: '%'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'ups.load:(.*)'
+                - \1
+          master_item:
+            key: get_ups_data
+        - uuid: 0ba279a8fe124209bf48214db518c246
+          name: 'Статус ИБП'
+          type: DEPENDENT
+          key: ups_status
+          delay: '0'
+          history: 1h
+          value_type: CHAR
+          trends: '0'
+          valuemap:
+            name: 'Статус ИБП'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'ups.status:(.*)'
+                - \1
+              error_handler: CUSTOM_VALUE
+              error_handler_params: Error
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: get_ups_data
+          triggers:
+            - uuid: 289330b1de2540cab6e0f9bbf070f335
+              expression: 'count(/NUT UPS/ups_status,#1,"regexp","LB")=1'
+              name: 'Батарея ИБП почти разряжена'
+              priority: DISASTER
+            - uuid: 68daffb294ea4b388e67898353543c8c
+              expression: 'count(/NUT UPS/ups_status,#1,"regexp","OB")=1'
+              name: 'ИБП работает от батареи'
+              priority: HIGH
+            - uuid: 5555a46c840a48e1812b1608f266b1d6
+              expression: 'count(/NUT UPS/ups_status,#1,"regexp","Error")=1'
+              name: 'Ошибка получения данных'
+              priority: HIGH
+        - uuid: be0bcc64b9114104b8198cc8517ba16e
+          name: 'Температура ИБП'
+          type: DEPENDENT
+          key: ups_temperature
+          delay: '0'
+          history: 7d
+          trends: 30d
+          units: ℃
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'ups.temperature:(.*)'
+                - \1
+          master_item:
+            key: get_ups_data
+      discovery_rules:
+        - uuid: 296f33a523484bf3a81fe3215cea2d71
+          name: parse_ups_data
+          type: DEPENDENT
+          key: parse_ups_data
+          delay: '0'
+          master_item:
+            key: get_ups_data
+      valuemaps:
+        - uuid: 68f51d5742934f50bd555a99ad09a1fb
+          name: 'Статус ИБП'
+          mappings:
+            - type: REGEXP
+              value: OL
+              newvalue: 'Подключён к сети'
+            - type: REGEXP
+              value: OB
+              newvalue: 'Работает от батареи'
+            - type: REGEXP
+              value: LB
+              newvalue: 'Низкий заряд батареи'

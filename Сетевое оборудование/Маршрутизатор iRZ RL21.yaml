@@ -1,0 +1,1109 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 779d87df1e614c44b40fb6bff6a1970a
+      name: 'by d.bogach/Сетевое оборудование'
+    - uuid: 36bff6c29af64692839d077febfc7079
+      name: 'Templates/Network devices'
+  templates:
+    - uuid: 71ca7e006f2f4cb98ce637b5198cef11
+      template: router_iRZ_RL21_objects
+      name: 'Маршрутизатор iRZ RL21'
+      groups:
+        - name: 'by d.bogach/Сетевое оборудование'
+        - name: 'Templates/Network devices'
+      items:
+        - uuid: ef69ad345821443eabadfb71adf09302
+          name: 'Модуль сотовой связи'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.35489.4.2.1.1.1
+          key: 4g_module
+          delay: 1h
+          history: 1d
+          value_type: CHAR
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: 9d8d80b14a694ead8a540ad19d1fc0a2
+          name: 'Диапазон частот'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.35489.4.2.1.17.1
+          key: band
+          history: 1d
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          triggers:
+            - uuid: 5d8317af58ac4d49b5dd0704a04e2bc6
+              expression: 'find(/router_iRZ_RL21_objects/band,,"regexp","WCDMA")=1'
+              name: 'Сеть 3G'
+              priority: WARNING
+        - uuid: 57219630fd524c97992883024c5de418
+          name: 'Версия прошивки'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.35489.1.4.0
+          key: firmare_version
+          delay: 1h
+          history: 1w
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 778b82ddb01144fb8e501ab063e0b263
+          name: 'Время непрерывной работы устройства'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.25.1.1.0
+          key: host_uptime
+          history: 1w
+          trends: 90d
+          units: uptime
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+          triggers:
+            - uuid: f98c9a1d412b4eff8013722a8e1c404d
+              expression: last(/router_iRZ_RL21_objects/host_uptime)<35m
+              name: 'Устройство было перезапущено'
+              opdata: 'Время работы -{ITEM.LASTVALUE1}'
+              priority: WARNING
+        - uuid: 319610638db94a0899e24e898c0bd621
+          name: 'Доступность ICMP'
+          type: SIMPLE
+          key: icmpping
+          history: 1w
+          trends: 90d
+          description: 'icmpping[,{$ICMP_PACKETS},{$ICMP_INTERVAL},{$ICMP_SIZE},{$ICMP_TIMEOUT}]'
+          triggers:
+            - uuid: 754f3f3d3e2b4aee9af88297f2529bf7
+              expression: 'max(/router_iRZ_RL21_objects/icmpping,#3)=0'
+              name: 'Хост недоступен (ICMP)'
+              opdata: 'ICMP{ITEM.LASTVALUE1}'
+              priority: DISASTER
+              manual_close: 'YES'
+        - uuid: af33a5fbadca44e4a5ea893b07692482
+          name: 'Процент потери пакетов ICMP'
+          type: SIMPLE
+          key: icmppingloss
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: '%'
+        - uuid: ac51f2b506844121be7b8a40657a1c81
+          name: 'Время отклика ICMP'
+          type: SIMPLE
+          key: icmppingsec
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: s
+        - uuid: 4b12f8ee6d014148bfe0ecf9d43818be
+          name: 'Индивидуальный номер мобильного оборудования (IMEI)'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.35489.4.2.1.16.1
+          key: ime
+          delay: 1h
+          history: 1d
+          value_type: CHAR
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: 33fd0f82be054bd1a2565fd0ccf07e9f
+          name: 'Международный идентификатор мобильного абонента (IMSI)'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.35489.4.2.1.24.1
+          key: imsi
+          delay: 1h
+          history: 1d
+          value_type: CHAR
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: dbd3b167376e474e9d107a859370091f
+          name: 'LTE RSRP'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.35489.4.2.1.20.1
+          key: lte_rsrp
+          delay: 3m
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          status: DISABLED
+          units: дБм
+          description: |
+            ≥ -80 дБм - отлично;
+            -80 дБм... -90 дБм - хорошо;
+            -90 дБм... -100 дБм - удовлетворительно;
+            ≤ -100 дБм - плохо.
+          triggers:
+            - uuid: 0251e95e59f14ba9915076d83bda83ab
+              expression: 'max(/router_iRZ_RL21_objects/lte_rsrp,5m)<{$MIN_LTE_RSRP}'
+              name: 'Низкий уровень LTE RSRP (< {$MIN_LTE_RSRP} дБм)'
+              priority: WARNING
+              dependencies:
+                - name: 'Сеть 3G'
+                  expression: 'find(/router_iRZ_RL21_objects/band,,"regexp","WCDMA")=1'
+        - uuid: 6d68eec8e55c4b1da98ad61d17c850b8
+          name: 'LTE RSRQ'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.35489.4.2.1.21.1
+          key: lte_rsrq
+          delay: 3m
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          status: DISABLED
+          units: дБ
+          description: |
+            ≥ -10 дБ - отлично;
+            -10 дБ... -15 дБ - хорошо;
+            -15 дБ... -20 дБ - удовлетворительно;
+            ≤ -20 дБ - плохо.
+          triggers:
+            - uuid: 274cee11e84a4e3fac602803343328af
+              expression: 'max(/router_iRZ_RL21_objects/lte_rsrq,5m)<{$MIN_LTE_RSRQ}'
+              name: 'Низкий уровень LTE RSRQ (< {$MIN_LTE_RSRQ} дБ)'
+              priority: WARNING
+              dependencies:
+                - name: 'Сеть 3G'
+                  expression: 'find(/router_iRZ_RL21_objects/band,,"regexp","WCDMA")=1'
+        - uuid: 77e5ad0dded944ac8aadbc7944f6114e
+          name: 'LTE RSSI'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.35489.4.2.1.22.1
+          key: lte_rssi
+          delay: 3m
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          status: DISABLED
+          units: дБм
+          description: |
+            > -65 дБм - отлично;
+            -65 дБм... -75 дБм - хорошо;
+            -75 дБм... -85 дБм - удовлетворительно;
+            -85 дБм... -95 дБм - плохо;
+            ≤ -100 дБм - нет сигнала.
+          triggers:
+            - uuid: fc3260cdb29f4ea389a886c658f64f0a
+              expression: 'max(/router_iRZ_RL21_objects/lte_rssi,5m)<{$MIN_LTE_RSSI}'
+              name: 'Низкий уровень LTE RSSI (< {$MIN_LTE_RSSI} дБм)'
+              priority: WARNING
+              dependencies:
+                - name: 'Сеть 3G'
+                  expression: 'find(/router_iRZ_RL21_objects/band,,"regexp","WCDMA")=1'
+        - uuid: 00f3da4a1b8a4dc1b4aa27f1a5296e32
+          name: 'LTE SINR'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.35489.4.2.1.23.1
+          key: lte_sinr
+          delay: 3m
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          status: DISABLED
+          units: дБ
+          description: |
+            ≥ 20 дБ - отлично;
+            13 дБ... 20 дБ - хорошо;
+            0 дБ... 13 дБ - удовлетворительно;
+            ≤ 0 дБ - потеря соединения.
+          triggers:
+            - uuid: 5969c583bcb64c829e656d5e0c12b2df
+              expression: 'max(/router_iRZ_RL21_objects/lte_sinr,5m)<{$MIN_LTE_SINR}'
+              name: 'Низкий уровень LTE SINR (< {$MIN_LTE_SINR} дБ)'
+              priority: WARNING
+              dependencies:
+                - name: 'Сеть 3G'
+                  expression: 'find(/router_iRZ_RL21_objects/band,,"regexp","WCDMA")=1'
+        - uuid: 8cad2686a26645b39fd4774bb9482ee4
+          name: 'Время непрерывной работы мобильной сети'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.35489.4.2.1.9.1
+          key: mobile_network_uptime
+          history: 1w
+          trends: 90d
+          units: uptime
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+          triggers:
+            - uuid: ed71995cf32c4212a909c8aab215822f
+              expression: last(/router_iRZ_RL21_objects/mobile_network_uptime)<30m
+              name: 'Мобильная связь была переподключена'
+              opdata: 'Время работы -{ITEM.LASTVALUE1}'
+              priority: WARNING
+              dependencies:
+                - name: 'Служба SNMP была перезапущена'
+                  expression: last(/router_iRZ_RL21_objects/sys_uptime)<30m
+        - uuid: 31f17ee01c6c4481bd8d032d8b49d19f
+          name: Модель
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.35489.1.2.0
+          key: model
+          delay: 1h
+          history: 1w
+          value_type: CHAR
+          trends: '0'
+          inventory_link: MODEL
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 992d08a130354f09a6e416c24d2d3637
+          name: 'Modem Revision'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.35489.4.2.1.2.1
+          key: ModemRevision.0
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: 787da9ef5e824a6bbdeff9fc229441d9
+          name: 'Количество локальных хостов по DHCP'
+          type: CALCULATED
+          key: number_of_local_hosts
+          history: 1d
+          trends: 90d
+          params: 'item_count(//mac_address[*])'
+        - uuid: b9fa2637e87042a0aeea7c06c58a0b37
+          name: Серия
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.35489.1.1.0
+          key: seria
+          delay: 1h
+          history: 1d
+          value_type: CHAR
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+        - uuid: 5ba7f3a96a0f4278bee1c41723a98feb
+          name: 'Серийный номер'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.35489.1.3.0
+          key: serial_number
+          delay: 1h
+          history: 1w
+          value_type: CHAR
+          trends: '0'
+          status: DISABLED
+          inventory_link: SERIALNO_A
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: f67b770465df426bb0c2add3771103ef
+          name: 'Качество сигнала'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.35489.4.2.1.8.1
+          key: signal_quality
+          history: 1w
+          trends: 90d
+          units: '%'
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '3.226'
+        - uuid: 5a41c70c6db24262b0884d612690e94e
+          name: 'ICC SIM-карты'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.35489.4.2.1.15.1
+          key: sim_icc
+          delay: 1h
+          history: 1w
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: RTRIM
+              parameters:
+                - '4'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 67c1213e963944a2a0033da09b392335
+          name: 'Оператор SIM-карты'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.35489.4.2.1.4.1
+          key: sim_operator
+          delay: 1h
+          history: 1w
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: b2ef1d4e848646d9801978c041245470
+          name: 'SNMP traps (fallback)'
+          type: SNMP_TRAP
+          key: snmptrap.fallback
+          delay: '0'
+          history: 1w
+          value_type: LOG
+          trends: '0'
+          status: DISABLED
+          logtimefmt: 'hh:mm:sszyyyy/MM/dd'
+        - uuid: 6f66c64641ac4c6a9e36a11758b24a1f
+          name: 'Контактная информация'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.4.0
+          key: sys_contact
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          inventory_link: CONTACT
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 7f141999cc3a4e9bbb0f67916db45634
+          name: Описание
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.1.0
+          key: sys_description
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          inventory_link: NOTES
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 7a1c80f4328a4541bacbd2dada62e887
+          name: Местоположение
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.6.0
+          key: sys_location
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          inventory_link: LOCATION
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: c306e9e458524d19bd0aa157a4c2d4b5
+          name: 'Имя хоста'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.5.0
+          key: sys_name
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          inventory_link: ALIAS
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 93a587f355b5446fa1042950f7bc8098
+          name: 'ID объекта'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.2.0
+          key: sys_object_id
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 75f001675eb64f4493cde9aa9552296e
+          name: Сервисы
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.7.0
+          key: sys_services
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: CHECK_NOT_SUPPORTED
+              parameters:
+                - '-1'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: 'Не поддерживается'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 5ccaafd45c034f94b0bc02c1a7ea0b11
+          name: 'Время непрерывной работы службы SNMP'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.3.0
+          key: sys_uptime
+          history: 1w
+          trends: 90d
+          units: uptime
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+          triggers:
+            - uuid: c0dcfca9e22646cca44522b2d2c3bc76
+              expression: last(/router_iRZ_RL21_objects/sys_uptime)<30m
+              name: 'Служба SNMP была перезапущена'
+              opdata: 'Время работы -{ITEM.LASTVALUE1}'
+              priority: WARNING
+              dependencies:
+                - name: 'Устройство было перезапущено'
+                  expression: last(/router_iRZ_RL21_objects/host_uptime)<35m
+        - uuid: 64ba85e8d0ef4497a13ba1c7e0a94d42
+          name: 'Доступность SNMP'
+          type: INTERNAL
+          key: 'zabbix[host,snmp,available]'
+          history: 1w
+          trends: 90d
+      discovery_rules:
+        - uuid: 4cc1a0215ef747168dbeedbd77a6a8cc
+          name: 'Подключённые хосты'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#MAC_ADDRESS},.1.3.6.1.2.1.4.22.1.2.11]'
+          key: hosts_discovery
+          lifetime_type: DELETE_IMMEDIATELY
+          lifetime: '0'
+          item_prototypes:
+            - uuid: 2d4ac451385a4fcc814ae6ec5dae4325
+              name: 'Локальный хост {#SNMPINDEX}: MAC-адрес'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.4.22.1.2.11.{#SNMPINDEX}'
+              key: 'mac_address[local_host_{#SNMPINDEX}]'
+              history: 1w
+              value_type: CHAR
+              trends: '0'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+        - uuid: 23f359e3315643e5b1b82987df626964
+          name: Интерфейсы
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#IFDESCR},.1.3.6.1.2.1.2.2.1.2,{#IFTYPE},.1.3.6.1.2.1.2.2.1.3,{#IFMTU},.1.3.6.1.2.1.2.2.1.4,{#IFSPEED},.1.3.6.1.2.1.2.2.1.5,{#IFPHYSADDRESS},.1.3.6.1.2.1.2.2.1.6,{#IFADMINSTATUS},.1.3.6.1.2.1.2.2.1.7,{#IFOPERSTATUS},.1.3.6.1.2.1.2.2.1.8,{#IFLASTCHANGE},.1.3.6.1.2.1.2.2.1.9,{#IFNAME},1.3.6.1.2.1.31.1.1.1.1, {#IFALIAS},1.3.6.1.2.1.31.1.1.1.18]'
+          key: interfaces_discovery
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#IFADMINSTATUS}'
+                value: '{$NET.IF.IFADMINSTATUS.MATCHES}'
+                formulaid: A
+              - macro: '{#IFADMINSTATUS}'
+                value: '{$NET.IF.IFADMINSTATUS.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: B
+              - macro: '{#IFALIAS}'
+                value: '{$NET.IF.IFALIAS.MATCHES}'
+                formulaid: C
+              - macro: '{#IFALIAS}'
+                value: '{$NET.IF.IFALIAS.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: D
+              - macro: '{#IFDESCR}'
+                value: '{$NET.IF.IFDESCR.MATCHES}'
+                formulaid: E
+              - macro: '{#IFDESCR}'
+                value: '{$NET.IF.IFDESCR.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: F
+              - macro: '{#IFNAME}'
+                value: '{$NET.IF.IFNAME.MATCHES}'
+                formulaid: G
+              - macro: '{#IFNAME}'
+                value: '{$NET.IF.IFNAME.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: H
+              - macro: '{#IFOPERSTATUS}'
+                value: '{$NET.IF.IFOPERSTATUS.MATCHES}'
+                formulaid: I
+              - macro: '{#IFOPERSTATUS}'
+                value: '{$NET.IF.IFOPERSTATUS.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: J
+              - macro: '{#IFTYPE}'
+                value: '{$NET.IF.IFTYPE.MATCHES}'
+                formulaid: K
+              - macro: '{#IFTYPE}'
+                value: '{$NET.IF.IFTYPE.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: L
+          item_prototypes:
+            - uuid: 4a47907711a5412db6cc38f13882699e
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Административное состояние'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.7.{#SNMPINDEX}'
+              key: 'admin_status[interface_№{#SNMPINDEX}]'
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+            - uuid: b088f04c859a468ea882040f35c80d88
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Описание'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.2.{#SNMPINDEX}'
+              key: 'description[interface_№{#SNMPINDEX}]'
+              delay: 1h
+              history: 1w
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+            - uuid: dd15a88f6d864f5a90f6563658db679e
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifInDiscards'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.13.{#SNMPINDEX}'
+              key: 'in_discards[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество входящих, но отвергнутых пакетов, даже если не было обнаружено ошибок, мешающих доставке пакетов на верхний уровень стека сетевых протоколов. Одной из возможных причин для отвержения пакета могло быть освобождение места в буфере.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 11d11e43d4654d4396a2abe110531e54
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifInErrors'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.14.{#SNMPINDEX}'
+              key: 'in_errors[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество входящих пакетов, полученных с ошибкой, из-за которой пакеты не были доставлены на верхний уровень стека сетевых протоколов.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 5c7d0fec2ebc49a9a97fcc7d1ff17664
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifInNUcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.12.{#SNMPINDEX}'
+              key: 'in_n_ucast_pkts[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество пакетов НЕ одноадресной рассылки (broadcast и multicast), доставленных на верхний уровень стека сетевых протоколов.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: cc3300d626de4280aef545119c002d93
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Входящий трафик (ifInOctets)'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.10.{#SNMPINDEX}'
+              key: 'in_octets[interface_№{#SNMPINDEX}]'
+              history: 1w
+              trends: 30d
+              units: bps
+              description: 'Полное число полученных байтов, включая символы заголовков.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+            - uuid: 402a4db0b3e84589a98e3507183918fb
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifInUcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.11.{#SNMPINDEX}'
+              key: 'in_ucast_pkts[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество пакетов одноадресной рассылки, доставленных на верхний уровень стека сетевых протоколов.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 158b80e6c77e4d4fba442f5c833f9a83
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifInUnknownProtos'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.15.{#SNMPINDEX}'
+              key: 'in_unknown_protos[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество пакетов, полученных через интерфейс, но отвергнутых из-за неизвестного или не поддерживаемого протокола.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: cf33f4c5c35845adb24328529c8cf606
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Последнее изменение'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.9.{#SNMPINDEX}'
+              key: 'last_change[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              value_type: FLOAT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: s
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+            - uuid: 2b558a253fd146bf958ed77ff23c4ee2
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Размер наибольшей получаемой/отправляемой датаграммы'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.4.{#SNMPINDEX}'
+              key: 'mtu[inteface_№{#SNMPINDEX}]'
+              delay: 1h
+              history: 1w
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: B
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+            - uuid: 3a2c9067c31243128a563163079661a1
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Оперативное состояние'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.8.{#SNMPINDEX}'
+              key: 'oper_status[interface_№{#SNMPINDEX}]'
+              history: 1d
+              trends: 90d
+              trigger_prototypes:
+                - uuid: 38d7348ce99247f6b175c360139e3dbb
+                  expression: |
+                    {$IFCONTROL:"{#IFNAME}"}=1 
+                    and 
+                    last(/router_iRZ_RL21_objects/oper_status[interface_№{#SNMPINDEX}],#1)=2 
+                    and
+                    last(/router_iRZ_RL21_objects/oper_status[interface_№{#SNMPINDEX}],#2)=2
+                    and 
+                    (last(/router_iRZ_RL21_objects/oper_status[interface_№{#SNMPINDEX}],#2)<>last(/router_iRZ_RL21_objects/oper_status[interface_№{#SNMPINDEX}],#3))
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: |
+                    last(/router_iRZ_RL21_objects/oper_status[interface_№{#SNMPINDEX}])<>2 
+                    or 
+                    {$IFCONTROL:"{#IFNAME}"}=0
+                    or
+                    trendavg(/router_iRZ_RL21_objects/oper_status[interface_№{#SNMPINDEX}],30d:now/d)=2
+                  name: 'Интерфейс {#IFNAME}({#IFALIAS}): пропал линк'
+                  opdata: '{ITEM.LASTVALUE1}'
+                  priority: AVERAGE
+                  manual_close: 'YES'
+            - uuid: dd876fc212a04672afe7fc96ffef4b6e
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifOutDiscards'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.19.{#SNMPINDEX}'
+              key: 'out_discards[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество исходящих пакетов, которые были отвергнуты даже если не было обнаружено ошибок, мешающих отправке. Одной из возможных причин отвержения пакета могло быть освобождение места в буфере.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 15e094a5bf6e471c8745dd26dcbbfb3a
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifOutErrors'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.20.{#SNMPINDEX}'
+              key: 'out_errors[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество исходящих пакетов, которые не могут быть отправлены из-за ошибок.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 2a648d888d27401facf0025b7dc55e53
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifOutNUcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.18.{#SNMPINDEX}'
+              key: 'out_n_ucast_pkts[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Полное количество пакетов, которые пытался отправить верхний уровень стека сетевых протоколов, и которые адресованы на broadcast или multicast адреса на этом суб-уровне, включая те, которые были отвергнуты или не отправлены.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 0bc4e2f2411e4dc89c1e812b75f63dca
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Исходящий трафик (ifOutOctets)'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.16.{#SNMPINDEX}'
+              key: 'out_octets[interface_№{#SNMPINDEX}]'
+              history: 1w
+              trends: 30d
+              units: bps
+              description: 'Полное количество отправленных октетов с интерфейса, включая символы заголовков.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+            - uuid: 5346caf066eb41e2b6fcdc5adcd709d6
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifOutQLen'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.21.{#SNMPINDEX}'
+              key: 'out_qlen[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              description: 'Длина очереди исходящих пакетов (в пакетах).'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 073f49d6203f4200b7cc8cee9267a17a
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifOutUcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.17.{#SNMPINDEX}'
+              key: 'out_ucast_pkts[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Полное количество пакетов, которые пытался отправить верхний уровень стека сетевых протоколов, и которые адресованы НЕ на broadcast или multicast адреса на этом суб-уровне, включая те, которые были отвергнуты или не отправлены.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: b7fc1057117446d393460f1a2fb117f0
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): MAC адрес'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.6.{#SNMPINDEX}'
+              key: 'phys_address[interface_№{#SNMPINDEX}]'
+              delay: 1h
+              history: 1w
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+            - uuid: 80bfcdcd9ea64987b7fe91811b4f1a06
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Пропускная способность'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.5.{#SNMPINDEX}'
+              key: 'speed[interface_№{#SNMPINDEX}]'
+              delay: 1h
+              history: 1w
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+            - uuid: 28b11ba03ce94bf2931cb91fa3980510
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Тип'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.3.{#SNMPINDEX}'
+              key: 'type[interface_№{#SNMPINDEX}]'
+              delay: 1h
+              history: 1w
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+          graph_prototypes:
+            - uuid: 7071788c492e4db48362052a1f6d8c4e
+              name: 'Административный статус интерфейса {#IFNAME}({#IFALIAS})'
+              yaxismin: '0.5'
+              yaxismax: '2.5'
+              show_triggers: 'NO'
+              ymin_type_1: FIXED
+              ymax_type_1: FIXED
+              graph_items:
+                - color: 1A7C11
+                  calc_fnc: ALL
+                  item:
+                    host: router_iRZ_RL21_objects
+                    key: 'admin_status[interface_№{#SNMPINDEX}]'
+            - uuid: ea7be9856095409592eb7bcc593ccdd1
+              name: 'Оперативный статус интерфейса {#IFNAME}({#IFALIAS})'
+              yaxismin: '0.5'
+              yaxismax: '2.5'
+              show_triggers: 'NO'
+              ymin_type_1: FIXED
+              ymax_type_1: FIXED
+              graph_items:
+                - color: 1A7C11
+                  calc_fnc: ALL
+                  item:
+                    host: router_iRZ_RL21_objects
+                    key: 'oper_status[interface_№{#SNMPINDEX}]'
+            - uuid: a74055cd0c784c3ba914266b8f982082
+              name: 'Сетевой трафик на интерфейсе {#IFNAME}({#IFALIAS})'
+              show_triggers: 'NO'
+              ymin_type_1: FIXED
+              graph_items:
+                - drawtype: FILLED_REGION
+                  color: AED581
+                  calc_fnc: ALL
+                  item:
+                    host: router_iRZ_RL21_objects
+                    key: 'in_octets[interface_№{#SNMPINDEX}]'
+                - sortorder: '1'
+                  drawtype: FILLED_REGION
+                  color: AFB42B
+                  calc_fnc: ALL
+                  item:
+                    host: router_iRZ_RL21_objects
+                    key: 'out_octets[interface_№{#SNMPINDEX}]'
+  triggers:
+    - uuid: 4b2f7ddcba124fc58fa2c6a214b7d9cb
+      expression: |
+        min(/router_iRZ_RL21_objects/icmpping,#3)=1
+        and
+        max(/router_iRZ_RL21_objects/zabbix[host,snmp,available],#5)=0
+      name: 'SNMP недоступен'
+      opdata: 'SNMP{ITEM.LASTVALUE2}'
+      priority: HIGH
+      dependencies:
+        - name: 'Хост недоступен (ICMP)'
+          expression: 'max(/router_iRZ_RL21_objects/icmpping,#3)=0'
+    - uuid: 0bf80f7165ed4a019dfc732c677c7204
+      expression: |
+        last(/router_iRZ_RL21_objects/icmpping,#5)=1
+        and
+        avg(/router_iRZ_RL21_objects/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/router_iRZ_RL21_objects/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+    - uuid: 9c8e99199f604910873a86e3ab654c01
+      expression: |
+        last(/router_iRZ_RL21_objects/icmpping,#5)=1
+        and
+        avg(/router_iRZ_RL21_objects/icmppingsec,#5)>{$WARN_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/router_iRZ_RL21_objects/icmppingsec,#5)<{$WARN_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$WARN_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+          expression: |
+            last(/router_iRZ_RL21_objects/icmpping,#5)=1
+            and
+            avg(/router_iRZ_RL21_objects/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+          recovery_expression: 'avg(/router_iRZ_RL21_objects/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+    - uuid: a369162c71f84977b76f2ab2a76c2065
+      expression: |
+        last(/router_iRZ_RL21_objects/icmpping,#5)=1
+        and
+        avg(/router_iRZ_RL21_objects/icmppingloss,#5)>{$AVG_PING_LOSS}
+        and
+        avg(/router_iRZ_RL21_objects/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/router_iRZ_RL21_objects/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+      name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+      dependencies:
+        - name: 'Хост недоступен (ICMP)'
+          expression: 'max(/router_iRZ_RL21_objects/icmpping,#3)=0'
+    - uuid: 4fd97efdc7d246e48272deb212843c89
+      expression: |
+        last(/router_iRZ_RL21_objects/icmpping,#5)=1
+        and
+        avg(/router_iRZ_RL21_objects/icmppingloss,#5)>{$WARN_PING_LOSS}
+        and
+        avg(/router_iRZ_RL21_objects/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/router_iRZ_RL21_objects/icmppingloss,#5)=0'
+      name: 'Средний процент потери пакетов ICMP свыше {$WARN_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+          expression: |
+            last(/router_iRZ_RL21_objects/icmpping,#5)=1
+            and
+            avg(/router_iRZ_RL21_objects/icmppingloss,#5)>{$AVG_PING_LOSS}
+            and
+            avg(/router_iRZ_RL21_objects/icmppingloss,#5)<100
+          recovery_expression: 'avg(/router_iRZ_RL21_objects/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+  graphs:
+    - uuid: 823e28e5ebc94d00b8b68768d500ace4
+      name: '1. ICMP loss'
+      show_triggers: 'NO'
+      graph_items:
+        - color: F44336
+          calc_fnc: ALL
+          item:
+            host: router_iRZ_RL21_objects
+            key: icmppingloss
+    - uuid: bedb7c9cf5a644a5b5abcb59135ee6c0
+      name: 'Время непрерывной работы мобильной сети'
+      show_triggers: 'NO'
+      graph_items:
+        - drawtype: FILLED_REGION
+          color: 0040FF
+          calc_fnc: ALL
+          item:
+            host: router_iRZ_RL21_objects
+            key: mobile_network_uptime
+    - uuid: f2bddf21284e4804b296e09c3f5990a5
+      name: 'Время непрерывной работы устройства'
+      show_triggers: 'NO'
+      graph_items:
+        - drawtype: FILLED_REGION
+          color: 0040FF
+          calc_fnc: ALL
+          item:
+            host: router_iRZ_RL21_objects
+            key: host_uptime
+    - uuid: b493f5ef5b654419ac2574ec40003b97
+      name: 'Время отклика ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: router_iRZ_RL21_objects
+            key: icmppingsec
+    - uuid: 09eaaf215c3e43c0a71c3bfb463b6fb4
+      name: 'Доступность ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: router_iRZ_RL21_objects
+            key: icmpping
+    - uuid: fb7ad859fee54f50ac9fe922cda2051c
+      name: 'Доступность SNMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: router_iRZ_RL21_objects
+            key: 'zabbix[host,snmp,available]'
+    - uuid: 386c847ae60949d8af2c113464db8d94
+      name: 'Количество локальных хостов'
+      show_triggers: 'NO'
+      graph_items:
+        - drawtype: FILLED_REGION
+          color: 7CB342
+          calc_fnc: ALL
+          item:
+            host: router_iRZ_RL21_objects
+            key: number_of_local_hosts
+    - uuid: d220c5e663d84d1797d80d7b14a72d31
+      name: 'Метрика LTE RSRP'
+      graph_items:
+        - color: BF00FF
+          calc_fnc: ALL
+          item:
+            host: router_iRZ_RL21_objects
+            key: lte_rsrp
+    - uuid: 32ff1c21ac07416a990d84f53cf057d1
+      name: 'Метрика LTE RSRQ'
+      graph_items:
+        - color: BF00FF
+          calc_fnc: ALL
+          item:
+            host: router_iRZ_RL21_objects
+            key: lte_rsrq
+    - uuid: 6ec2665c7b574b52944e4f788f4865d9
+      name: 'Метрика LTE RSSI'
+      graph_items:
+        - color: BF00FF
+          calc_fnc: ALL
+          item:
+            host: router_iRZ_RL21_objects
+            key: lte_rssi
+    - uuid: 9f2468721a7748449b8c78c49beb9bb4
+      name: 'Метрика LTE SINR'
+      graph_items:
+        - color: BF00FF
+          calc_fnc: ALL
+          item:
+            host: router_iRZ_RL21_objects
+            key: lte_sinr
+    - uuid: c506cf3a349c42129ba58923564d9d22
+      name: 'Процент потери пакетов ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: router_iRZ_RL21_objects
+            key: icmppingloss
+    - uuid: f198d34eaf0646e4be67f07f00dddaf6
+      name: 'Уровень сигнала'
+      ymin_type_1: FIXED
+      ymax_type_1: FIXED
+      graph_items:
+        - drawtype: FILLED_REGION
+          color: B3E5FC
+          calc_fnc: ALL
+          item:
+            host: router_iRZ_RL21_objects
+            key: signal_quality

@@ -1,0 +1,503 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: a8554980e8bd4daeaf0d04b4e459f9e7
+      name: 'by d.bogach/Видеонаблюдение'
+    - uuid: d37f71c7e3f7469bab645852a69a2018
+      name: 'Templates/Video surveillance'
+  templates:
+    - uuid: 42a2facaca644e54a34dba8a9c5b6581
+      template: videoregister_trassir_by_sdk
+      name: 'Видеорегистратор Trassir SDK'
+      groups:
+        - name: 'by d.bogach/Видеонаблюдение'
+        - name: 'Templates/Video surveillance'
+      items:
+        - uuid: da4af92c5d6b424ea1780c9125dee63a
+          name: 'Число активных каналов'
+          type: DEPENDENT
+          key: channels_online
+          delay: '0'
+          history: 1w
+          trends: 1w
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.channels_online
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+          master_item:
+            key: server_health
+        - uuid: 3752de694fb748588950c6f868d362d2
+          name: 'Число каналов'
+          type: DEPENDENT
+          key: channels_total
+          delay: '0'
+          history: 1w
+          trends: 1w
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.channels_total
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+          master_item:
+            key: server_health
+          triggers:
+            - uuid: 2667fcd40396458e9b92bbc3c31c73fa
+              expression: 'last(/videoregister_trassir_by_sdk/channels_total)={$LICENSES}'
+              name: 'Закончились свободные лицензии'
+              opdata: 'Использовано лицензий:{ITEM.LASTVALUE1}'
+              priority: AVERAGE
+            - uuid: 7c015ef68faa4b1c8f479233f9bccfe7
+              expression: 'last(/videoregister_trassir_by_sdk/channels_total)>={$LICENSES}-{$RESERVE_LICENSES}'
+              name: 'Осталось менее {$RESERVE_LICENSES} свободных лицензий'
+              opdata: 'Использовано лицензий:{ITEM.LASTVALUE1}'
+              priority: WARNING
+              dependencies:
+                - name: 'Закончились свободные лицензии'
+                  expression: 'last(/videoregister_trassir_by_sdk/channels_total)={$LICENSES}'
+        - uuid: 5b913634270243c5bc8f0d5d9f775538
+          name: 'Загрузка CPU'
+          type: DEPENDENT
+          key: cpu_load
+          delay: '0'
+          history: 1w
+          value_type: FLOAT
+          trends: 90d
+          units: '%'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.cpu_load
+          master_item:
+            key: server_health
+          triggers:
+            - uuid: db8c0ee9d85a41d0aa582ae3bfdeee10
+              expression: 'avg(/videoregister_trassir_by_sdk/cpu_load,5m)>{$CPU_UTIL_CRIT}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/videoregister_trassir_by_sdk/cpu_load,5m)<{$CPU_UTIL_CRIT}-3'
+              name: 'Загрузка CPU выше {$CPU_UTIL_CRIT}%'
+              priority: AVERAGE
+            - uuid: 8f3884563c6243db9dfe8b326d2a55ce
+              expression: 'avg(/videoregister_trassir_by_sdk/cpu_load,5m)>{$CPU_UTIL_WARN}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/videoregister_trassir_by_sdk/cpu_load,5m)<{$CPU_UTIL_WARN}-3'
+              name: 'Загрузка CPU выше {$CPU_UTIL_WARN}%'
+              priority: WARNING
+              dependencies:
+                - name: 'Загрузка CPU выше {$CPU_UTIL_CRIT}%'
+                  expression: 'avg(/videoregister_trassir_by_sdk/cpu_load,5m)>{$CPU_UTIL_CRIT}'
+                  recovery_expression: 'avg(/videoregister_trassir_by_sdk/cpu_load,5m)<{$CPU_UTIL_CRIT}-3'
+        - uuid: ea42107e33614ad5b11f951b5d4b2ea4
+          name: 'Статус БД'
+          type: DEPENDENT
+          key: db_status
+          delay: '0'
+          history: 1w
+          trends: 90d
+          valuemap:
+            name: Статус
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.database
+          master_item:
+            key: server_health
+          triggers:
+            - uuid: 44e151c9578049a79c9aaf6cf238e6e9
+              expression: last(/videoregister_trassir_by_sdk/db_status)=0
+              name: 'Ошибка БД'
+              priority: HIGH
+              manual_close: 'YES'
+        - uuid: 9d26182fe0a34f6aae270ce7f96b77e0
+          name: 'Глубина архива основного потока'
+          type: DEPENDENT
+          key: depth_main_stream
+          delay: '0'
+          history: 1w
+          value_type: FLOAT
+          trends: 1w
+          units: дней
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.disks_stat_main_days
+          master_item:
+            key: server_health
+        - uuid: 8874b34efd4e483784793e5be4c1166f
+          name: 'Глубина архива привилегированных каналов'
+          type: DEPENDENT
+          key: depth_privilege_stream
+          delay: '0'
+          history: 1w
+          value_type: FLOAT
+          trends: 1w
+          units: дней
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.disks_stat_priv_days
+          master_item:
+            key: server_health
+        - uuid: 4842ec56043b4acc9929a2c4a62e4c11
+          name: 'Глубина архива субпотока'
+          type: DEPENDENT
+          key: depth_sub_stream
+          delay: '0'
+          history: 1w
+          value_type: FLOAT
+          trends: 1w
+          units: дней
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.disks_stat_subs_days
+          master_item:
+            key: server_health
+        - uuid: b3d7de55a71f49d8903569b51a1a9cd8
+          name: 'Статус дисков'
+          type: DEPENDENT
+          key: disks_status
+          delay: '0'
+          history: 1w
+          trends: 90d
+          valuemap:
+            name: Статус
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.disks
+          master_item:
+            key: server_health
+          triggers:
+            - uuid: 12d86dbd79e649ff9c414ae233d4729c
+              expression: last(/videoregister_trassir_by_sdk/disks_status)=0
+              name: 'Ошибка дисков'
+              priority: HIGH
+              manual_close: 'YES'
+        - uuid: e913376410db43b3a3bdde80b7a1db40
+          name: 'Доступность ICMP'
+          type: SIMPLE
+          key: icmpping
+          history: 1w
+          trends: 90d
+          description: 'icmpping[,{$ICMP_PACKETS},{$ICMP_INTERVAL},{$ICMP_SIZE},{$ICMP_TIMEOUT}]'
+          triggers:
+            - uuid: 2acb7991558e4a1085ed70da5394ecc3
+              expression: 'max(/videoregister_trassir_by_sdk/icmpping,#3)=0'
+              name: 'Хост недоступен (ICMP)'
+              opdata: 'ICMP{ITEM.LASTVALUE1}'
+              priority: DISASTER
+              manual_close: 'YES'
+        - uuid: c7e7fc96e1e54597a1eefb9f7bc75f17
+          name: 'Процент потери пакетов ICMP'
+          type: SIMPLE
+          key: icmppingloss
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: '%'
+        - uuid: 571ac8f36b744310ba1a6c312dbfd3f4
+          name: 'Время отклика ICMP'
+          type: SIMPLE
+          key: icmppingsec
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: s
+        - uuid: 99f5177bbb824f419286aa89271e95d1
+          name: 'Доступность порта управления'
+          type: SIMPLE
+          key: 'net.tcp.service[tcp,,{$MANAGEMENT_PORT}]'
+          history: 1w
+          trends: 90d
+          valuemap:
+            name: 'Доступность портов'
+          triggers:
+            - uuid: fcb4d096da3c4c148989b8b3e4716cb4
+              expression: 'max(/videoregister_trassir_by_sdk/net.tcp.service[tcp,,{$MANAGEMENT_PORT}],#3)=0'
+              name: 'Порт управления недоступен'
+              opdata: '{ITEM.LASTVALUE1}'
+              priority: DISASTER
+              dependencies:
+                - name: 'Хост недоступен (ICMP)'
+                  expression: 'max(/videoregister_trassir_by_sdk/icmpping,#3)=0'
+        - uuid: af5735e81c954327849f29fb2bba433c
+          name: 'Доступность SDK'
+          type: SIMPLE
+          key: 'net.tcp.service[tcp,,{$SDK_PORT}]'
+          history: 1w
+          trends: 90d
+          valuemap:
+            name: 'Доступность SDK'
+          triggers:
+            - uuid: a0c6541ffcbe4fca95a9f2565491b45d
+              expression: 'max(/videoregister_trassir_by_sdk/net.tcp.service[tcp,,{$SDK_PORT}],#3)=0'
+              name: 'Порт SDK недоступен'
+              opdata: '{ITEM.LASTVALUE1}'
+              priority: DISASTER
+              dependencies:
+                - name: 'Хост недоступен (ICMP)'
+                  expression: 'max(/videoregister_trassir_by_sdk/icmpping,#3)=0'
+        - uuid: 383d464206fc49948bf222a3c9f5762d
+          name: 'Доступность порта видео'
+          type: SIMPLE
+          key: 'net.tcp.service[tcp,,{$VIDEO_PORT}]'
+          history: 1w
+          trends: 90d
+          valuemap:
+            name: 'Доступность портов'
+          triggers:
+            - uuid: bc7cd1474a394ead87e105437b7679f3
+              expression: 'max(/videoregister_trassir_by_sdk/net.tcp.service[tcp,,{$VIDEO_PORT}],#3)=0'
+              name: 'Порт видео недоступен'
+              opdata: '{ITEM.LASTVALUE1}'
+              priority: DISASTER
+              dependencies:
+                - name: 'Хост недоступен (ICMP)'
+                  expression: 'max(/videoregister_trassir_by_sdk/icmpping,#3)=0'
+        - uuid: 4abd0b2ed030474d9d01cc6a4e932975
+          name: 'Статус сети'
+          type: DEPENDENT
+          key: network_status
+          delay: '0'
+          history: 1w
+          trends: 90d
+          valuemap:
+            name: Статус
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.network
+          master_item:
+            key: server_health
+          triggers:
+            - uuid: 920f239fea494c648604b5b58a4b1f80
+              expression: last(/videoregister_trassir_by_sdk/network_status)=0
+              name: 'Ошибка сети'
+              priority: HIGH
+              manual_close: 'YES'
+        - uuid: 8fdfb98d71544b7ba9b432d4fdfe47bd
+          name: 'Статус скриптов'
+          type: DEPENDENT
+          key: scripts_status
+          delay: '0'
+          history: 1w
+          trends: 90d
+          valuemap:
+            name: Статус
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.automation
+          master_item:
+            key: server_health
+          triggers:
+            - uuid: 444892c4fd774cacb16c66386f26d294
+              expression: last(/videoregister_trassir_by_sdk/scripts_status)=0
+              name: 'Ошибка скриптов'
+              priority: AVERAGE
+              manual_close: 'YES'
+        - uuid: bd1f452b9788434bb0e9766860bbf361
+          name: server_health
+          type: HTTP_AGENT
+          key: server_health
+          history: 1h
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - '\{(\n|.)*\}'
+                - \0
+          url: 'https://{HOST.IP}:{$SDK_PORT}/health'
+          query_fields:
+            - name: password
+              value: '{$SDK_PASSWORD}'
+          follow_redirects: 'NO'
+        - uuid: 5d38f48a7418423492b33f683b064883
+          name: 'Время непрерывной работы устройства'
+          type: DEPENDENT
+          key: uptime
+          delay: '0'
+          history: 1w
+          trends: 90d
+          units: uptime
+          valuemap:
+            name: 'Получение данных по SDK'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.uptime
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
+          master_item:
+            key: server_health
+          triggers:
+            - uuid: b6919ce2145b4fb3a1cb2ec316ea3158
+              expression: 'max(/videoregister_trassir_by_sdk/uptime,#3)=0'
+              name: 'Ошибка получения данных'
+              priority: HIGH
+            - uuid: 6e046ecf56b540f09b18890fd43da52d
+              expression: last(/videoregister_trassir_by_sdk/uptime)<30m
+              name: 'Сервер был перезапущен'
+              priority: WARNING
+              manual_close: 'YES'
+              dependencies:
+                - name: 'Ошибка получения данных'
+                  expression: 'max(/videoregister_trassir_by_sdk/uptime,#3)=0'
+      macros:
+        - macro: '{$CPU_UTIL_CRIT}'
+          value: '95'
+        - macro: '{$CPU_UTIL_WARN}'
+          value: '80'
+        - macro: '{$LICENSES}'
+        - macro: '{$MANAGEMENT_PORT}'
+          value: '3080'
+        - macro: '{$RESERVE_LICENSES}'
+          value: '5'
+        - macro: '{$SDK_PASSWORD}'
+          value: password
+        - macro: '{$SDK_PORT}'
+          value: '8080'
+        - macro: '{$VIDEO_PORT}'
+          value: '3081'
+      valuemaps:
+        - uuid: 57e765e32d5542efb13fc716ffa1308a
+          name: 'Доступность SDK'
+          mappings:
+            - value: '0'
+              newvalue: Недоступен
+            - value: '1'
+              newvalue: Доступен
+        - uuid: b6fb64d564b24c679d719e4d744976cc
+          name: 'Доступность портов'
+          mappings:
+            - value: '0'
+              newvalue: 'Порт недоступен'
+            - value: '1'
+              newvalue: 'Порт доступен'
+        - uuid: 7af5b7572e89401ba6021ba3f52e2818
+          name: 'Получение данных по SDK'
+          mappings:
+            - value: '0'
+              newvalue: 'Ошибка получения данных'
+        - uuid: 0e05e6c3829e44abb8588264fbacc276
+          name: Статус
+          mappings:
+            - value: '-1'
+              newvalue: 'Не определено'
+            - value: '0'
+              newvalue: Ошибка
+            - value: '1'
+              newvalue: Ок
+  triggers:
+    - uuid: dc5de920278b463a99239e83b7de8451
+      expression: 'last(/videoregister_trassir_by_sdk/channels_total)>max(/videoregister_trassir_by_sdk/channels_online,#3)'
+      name: 'Некоторые каналы недоступны'
+      priority: AVERAGE
+    - uuid: 3e4501cd00f1458c8001c6639a84a849
+      expression: |
+        last(/videoregister_trassir_by_sdk/icmpping,#5)=1
+        and
+        avg(/videoregister_trassir_by_sdk/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/videoregister_trassir_by_sdk/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+    - uuid: e4fa6f425dbd43fca84660cd8715f9a2
+      expression: |
+        last(/videoregister_trassir_by_sdk/icmpping,#5)=1
+        and
+        avg(/videoregister_trassir_by_sdk/icmppingsec,#5)>{$WARN_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/videoregister_trassir_by_sdk/icmppingsec,#5)<{$WARN_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$WARN_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+          expression: |
+            last(/videoregister_trassir_by_sdk/icmpping,#5)=1
+            and
+            avg(/videoregister_trassir_by_sdk/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+          recovery_expression: 'avg(/videoregister_trassir_by_sdk/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+    - uuid: 9aed357fd1e8434692cd800915cb8fd0
+      expression: |
+        last(/videoregister_trassir_by_sdk/icmpping,#5)=1
+        and
+        avg(/videoregister_trassir_by_sdk/icmppingloss,#5)>{$AVG_PING_LOSS}
+        and
+        avg(/videoregister_trassir_by_sdk/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/videoregister_trassir_by_sdk/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+      name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+      dependencies:
+        - name: 'Хост недоступен (ICMP)'
+          expression: 'max(/videoregister_trassir_by_sdk/icmpping,#3)=0'
+    - uuid: 3fe1c7b9e31044ddb0260b49257f8df9
+      expression: |
+        last(/videoregister_trassir_by_sdk/icmpping,#5)=1
+        and
+        avg(/videoregister_trassir_by_sdk/icmppingloss,#5)>{$WARN_PING_LOSS}
+        and
+        avg(/videoregister_trassir_by_sdk/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/videoregister_trassir_by_sdk/icmppingloss,#5)=0'
+      name: 'Средний процент потери пакетов ICMP свыше {$WARN_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+          expression: |
+            last(/videoregister_trassir_by_sdk/icmpping,#5)=1
+            and
+            avg(/videoregister_trassir_by_sdk/icmppingloss,#5)>{$AVG_PING_LOSS}
+            and
+            avg(/videoregister_trassir_by_sdk/icmppingloss,#5)<100
+          recovery_expression: 'avg(/videoregister_trassir_by_sdk/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+  graphs:
+    - uuid: 046dcad75ce94d0aa3e42ecd4c7dbba0
+      name: '1. ICMP loss'
+      show_triggers: 'NO'
+      graph_items:
+        - color: F44336
+          calc_fnc: ALL
+          item:
+            host: videoregister_trassir_by_sdk
+            key: icmppingloss
+    - uuid: 3f1de01e07e54693b318a141e872cedc
+      name: 'Время отклика ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: videoregister_trassir_by_sdk
+            key: icmppingsec
+    - uuid: 8b66452f08f74276872cbc2b242ad1fb
+      name: 'Доступность ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: videoregister_trassir_by_sdk
+            key: icmpping
+    - uuid: f1e90773919249c19d158f9989502399
+      name: 'Процент потери пакетов ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: videoregister_trassir_by_sdk
+            key: icmppingloss

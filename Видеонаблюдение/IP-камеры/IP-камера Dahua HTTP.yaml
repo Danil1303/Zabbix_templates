@@ -1,0 +1,518 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: a8554980e8bd4daeaf0d04b4e459f9e7
+      name: 'by d.bogach/Видеонаблюдение'
+    - uuid: d37f71c7e3f7469bab645852a69a2018
+      name: 'Templates/Video surveillance'
+  templates:
+    - uuid: bdb68b8f2dc04092ae2f3d873ad79203
+      template: 'IP-camera Dahua'
+      name: 'IP-камера Dahua HTTP'
+      groups:
+        - name: 'by d.bogach/Видеонаблюдение'
+        - name: 'Templates/Video surveillance'
+      items:
+        - uuid: 1951202112b04a8a897039a7c17ef1a8
+          name: 'Закрытие объектива'
+          type: HTTP_AGENT
+          key: blind_detect
+          delay: 5m
+          history: 1h
+          value_type: TEXT
+          trends: '0'
+          authtype: DIGEST
+          username: '{$LOGIN}'
+          password: '{$PASSWORD}'
+          preprocessing:
+            - type: MATCHES_REGEX
+              parameters:
+                - 'Error: No Events'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: 'Закрытие объектива'
+          url: 'http://{HOST.IP}:{$DAHUA_PORT}/cgi-bin/eventManager.cgi'
+          query_fields:
+            - name: action
+              value: getEventIndexes
+            - name: code
+              value: VideoBlind
+          status_codes: '401,200'
+          triggers:
+            - uuid: 4225ed6bbfb04317967de020f2761bf7
+              expression: 'count(/IP-camera Dahua/blind_detect,10m,"regexp","Закрытие объектива")=1'
+              name: 'Закрытие объектива'
+              priority: HIGH
+              manual_close: 'YES'
+              dependencies:
+                - name: 'Отключена синхронизация с NTP сервером'
+                  expression: 'find(/IP-camera Dahua/ntp_status,,"regexp",{$NTP_STATUS})=0'
+        - uuid: e3918460be064f31b6b4c70d732fb4af
+          name: 'Имя хоста'
+          type: DEPENDENT
+          key: hostname
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          inventory_link: NAME
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'table.Network.Hostname=(.*)'
+                - \1
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: raw_basic_config
+        - uuid: b2aefccc2e9443868b59fdf4c371b332
+          name: MAC-адрес
+          type: HTTP_AGENT
+          key: mac_address
+          delay: 1h
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          authtype: DIGEST
+          username: '{$LOGIN}'
+          password: '{$PASSWORD}'
+          inventory_link: MACADDRESS_A
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'PhysicalAddress=(.*)'
+                - \1
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          url: 'http://{HOST.IP}:{$DAHUA_PORT}/cgi-bin/netApp.cgi'
+          query_fields:
+            - name: action
+              value: getInterfaces
+        - uuid: 732a3f51fffc4b32ba782dd234842c2c
+          name: Модель
+          type: HTTP_AGENT
+          key: model
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          authtype: DIGEST
+          username: '{$LOGIN}'
+          password: '{$PASSWORD}'
+          inventory_link: MODEL
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'updateSerial=(.*)'
+                - \1
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+          url: 'http://{HOST.IP}:{$DAHUA_PORT}/cgi-bin/magicBox.cgi'
+          query_fields:
+            - name: action
+              value: getSystemInfo
+          status_codes: '401,200'
+        - uuid: b2a673a57dfd4ad5b15357dedfa044b2
+          name: 'Доступность HTTP'
+          type: SIMPLE
+          key: 'net.tcp.service[http]'
+          history: 1w
+          trends: 90d
+          triggers:
+            - uuid: c4e51f17dd744943b3f993ee0cf65ecc
+              expression: 'max(/IP-camera Dahua/net.tcp.service[http],#3)=0'
+              name: 'Хост недоступен (HTTP)'
+              opdata: 'HTTP{ITEM.LASTVALUE1}'
+              priority: DISASTER
+              manual_close: 'YES'
+        - uuid: c344b6bf9389412eaf1cc68cb76fb122
+          name: 'Порт NTP сервера'
+          type: DEPENDENT
+          key: ntp_port
+          delay: '0'
+          history: 1d
+          trends: '0'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'Port=(.*)'
+                - \1
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: raw_ntp
+        - uuid: f439bfac3a8e41a2a040fa8f4236a9f8
+          name: 'Адрес NTP сервера'
+          type: DEPENDENT
+          key: ntp_server
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'Address=(.*)'
+                - \1
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: raw_ntp
+          triggers:
+            - uuid: b62a1a6c2f1a49f7b5a20b3736c28a8d
+              expression: 'find(/IP-camera Dahua/ntp_server,,"regexp",{$NTP_SERVER})=0'
+              name: 'Неверный NTP сервер'
+              status: DISABLED
+              priority: AVERAGE
+              manual_close: 'YES'
+              dependencies:
+                - name: 'Отключена синхронизация с NTP сервером'
+                  expression: 'find(/IP-camera Dahua/ntp_status,,"regexp",{$NTP_STATUS})=0'
+        - uuid: f89b282982a44e53881ec3f0da32d2bb
+          name: 'Синхронизация с NTP сервером'
+          type: DEPENDENT
+          key: ntp_status
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'Enable=(.*)'
+                - \1
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: raw_ntp
+          triggers:
+            - uuid: 0a537a62fa664744800b1b6af7ff781a
+              expression: 'find(/IP-camera Dahua/ntp_status,,"regexp",{$NTP_STATUS})=0'
+              name: 'Отключена синхронизация с NTP сервером'
+              status: DISABLED
+              priority: AVERAGE
+              manual_close: 'YES'
+        - uuid: 8a13f199b4bf43158e270cd938259aeb
+          name: 'Частота синхронизации с NTP сервером'
+          type: DEPENDENT
+          key: ntp_update_period
+          delay: '0'
+          history: 1d
+          trends: '0'
+          units: m
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'UpdatePeriod=(.*)'
+                - \1
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: raw_ntp
+        - uuid: 084d990ff08a4e9697a1b4ab32ac3e75
+          name: raw_basic_config
+          type: HTTP_AGENT
+          key: raw_basic_config
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+          authtype: DIGEST
+          username: '{$LOGIN}'
+          password: '{$PASSWORD}'
+          url: 'http://{HOST.IP}:{$DAHUA_PORT}/cgi-bin/configManager.cgi'
+          query_fields:
+            - name: action
+              value: getConfig
+            - name: name
+              value: Network
+          status_codes: '401,200'
+          triggers:
+            - uuid: 7e6d7c6e390145c6a51afb272237b88b
+              expression: 'last(/IP-camera Dahua/raw_basic_config,#1)="401 Unauthorized"'
+              name: 'Ошибка авторизации'
+              priority: HIGH
+              dependencies:
+                - name: 'Хост недоступен (HTTP)'
+                  expression: 'max(/IP-camera Dahua/net.tcp.service[http],#3)=0'
+        - uuid: 5312960f51124e24a7cebe70f9a0d53d
+          name: 'Текущие дата/время'
+          type: HTTP_AGENT
+          key: raw_current_date_and_time
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          authtype: DIGEST
+          username: '{$LOGIN}'
+          password: '{$PASSWORD}'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'result=(.*)'
+                - \1
+              error_handler: CUSTOM_VALUE
+              error_handler_params: Error
+          url: 'http://{HOST.IP}:{$DAHUA_PORT}/cgi-bin/global.cgi'
+          query_fields:
+            - name: action
+              value: getCurrentTime
+          status_codes: '404,401,200'
+          triggers:
+            - uuid: a0acad3fa8c44bf191bb7e4695b3db7c
+              expression: 'find(/IP-camera Dahua/raw_current_date_and_time,,"regexp",{$AUTHORITY_ERROR})=1'
+              name: 'Ошибка авторизации'
+              status: DISABLED
+              priority: HIGH
+            - uuid: 5955d4cd805d40dc8e298c210f0a40da
+              expression: 'count(/IP-camera Dahua/raw_current_date_and_time,#1,"regexp","Error")=1'
+              name: 'Ошибка получения данных'
+              priority: AVERAGE
+        - uuid: 07cfbdd87b404508aba25f6ca0f3e6ca
+          name: raw_date
+          type: DEPENDENT
+          key: raw_date
+          delay: '0'
+          history: 1d
+          trends: '0'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - '\d{4}-\d{2}-\d{2}'
+                - \0
+            - type: STR_REPLACE
+              parameters:
+                - '-'
+                - ''
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: raw_current_date_and_time
+        - uuid: 8e5f9ceacc9546009c835627856949ae
+          name: raw_email
+          type: HTTP_AGENT
+          key: raw_email
+          delay: 1h
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          authtype: DIGEST
+          username: '{$LOGIN}'
+          password: '{$PASSWORD}'
+          url: 'http://{HOST.IP}:{$DAHUA_PORT}/cgi-bin/configManager.cgi'
+          query_fields:
+            - name: action
+              value: getConfig
+            - name: name
+              value: Email
+          status_codes: '401,200'
+        - uuid: 54ff1a194f8241d48b94b64ab059316a
+          name: raw_encode
+          type: HTTP_AGENT
+          key: raw_encode
+          delay: 1h
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+          authtype: DIGEST
+          username: '{$LOGIN}'
+          password: '{$PASSWORD}'
+          url: 'http://{HOST.IP}:{$DAHUA_PORT}/cgi-bin/configManager.cgi'
+          query_fields:
+            - name: action
+              value: getConfig
+            - name: name
+              value: Encode
+          status_codes: '401,200'
+        - uuid: 614d9529818e4481945a1d7b434c029f
+          name: raw_locales_config
+          type: HTTP_AGENT
+          key: raw_locales_config
+          delay: 1h
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          authtype: DIGEST
+          username: '{$LOGIN}'
+          password: '{$PASSWORD}'
+          url: 'http://{HOST.IP}:{$DAHUA_PORT}/cgi-bin/configManager.cgi'
+          query_fields:
+            - name: action
+              value: getConfig
+            - name: name
+              value: Locales
+          status_codes: '401,200'
+        - uuid: 475aaf7758a14e3b87e0baed2f992857
+          name: raw_ntp
+          type: HTTP_AGENT
+          key: raw_ntp
+          delay: 5m
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+          authtype: DIGEST
+          username: '{$LOGIN}'
+          password: '{$PASSWORD}'
+          url: 'http://{HOST.IP}:{$DAHUA_PORT}/cgi-bin/configManager.cgi'
+          query_fields:
+            - name: action
+              value: getConfig
+            - name: name
+              value: NTP
+          status_codes: '401,200'
+        - uuid: cbae04ea3abb466f81f1357ca9142d6f
+          name: raw_rtsp
+          type: HTTP_AGENT
+          key: raw_rtsp
+          delay: 1h
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+          authtype: DIGEST
+          username: '{$LOGIN}'
+          password: '{$PASSWORD}'
+          url: 'http://{HOST.IP}:{$DAHUA_PORT}/cgi-bin/configManager.cgi'
+          query_fields:
+            - name: action
+              value: getConfig
+            - name: name
+              value: RTSP
+          status_codes: '401,200'
+        - uuid: 40e4adaeb5aa4b35ad4aeccb19b8daee
+          name: raw_time
+          type: DEPENDENT
+          key: raw_time
+          delay: '0'
+          history: 1d
+          trends: '0'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - '(\d{4}-\d{2}-\d{2} (\d{2}:\d{2}:\d{2}))'
+                - \2
+            - type: STR_REPLACE
+              parameters:
+                - ':'
+                - ''
+          master_item:
+            key: raw_current_date_and_time
+        - uuid: 678db1cf937e44c092ed89a00b10ce4a
+          name: 'Серийный номер'
+          type: HTTP_AGENT
+          key: serial_number
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          authtype: DIGEST
+          username: '{$LOGIN}'
+          password: '{$PASSWORD}'
+          inventory_link: SERIALNO_A
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'sn=(.*)'
+                - \1
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+          url: 'http://{HOST.IP}:{$DAHUA_PORT}/cgi-bin/magicBox.cgi'
+          query_fields:
+            - name: action
+              value: getSerialNo
+          status_codes: '401,200'
+        - uuid: 3872ddba6025403491684cd15627190b
+          name: storages
+          type: HTTP_AGENT
+          key: storages
+          delay: 5m
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          authtype: DIGEST
+          username: '{$LOGIN}'
+          password: '{$PASSWORD}'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          url: 'http://{HOST.IP}:{$DAHUA_PORT}/cgi-bin/storageDevice.cgi'
+          query_fields:
+            - name: action
+              value: factory.getCollect
+          status_codes: '401,200'
+        - uuid: 9a8083676af448a0b419d1f16caa6b78
+          name: 'Часовой пояс (UTC +h)'
+          type: DEPENDENT
+          key: time_zone
+          delay: '0'
+          history: 1d
+          trends: '0'
+          units: h
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'TimeZone=(.*)'
+                - \1
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: raw_ntp
+          triggers:
+            - uuid: 5a4900cc5b064b72a5d497a4aa17e37b
+              expression: 'last(/IP-camera Dahua/time_zone)<>3'
+              name: 'Неверный часовой пояс'
+              priority: HIGH
+        - uuid: cef2fd99b0254b388ed23baf11a9a8be
+          name: 'Часовой пояс (регион)'
+          type: DEPENDENT
+          key: time_zone_desc
+          delay: '0'
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'TimeZoneDesc=(.*)'
+                - \1
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          master_item:
+            key: raw_ntp
+      macros:
+        - macro: '{$NTP_STATUS}'
+          value: 'false'
+  triggers:
+    - uuid: 141ed31c30414f059875737f3b804b95
+      expression: |
+        time()>000500
+        and
+        time()<235500
+        and
+        last(/IP-camera Dahua/raw_date)<>date()
+        and 
+        nodata(/IP-camera Dahua/raw_current_date_and_time,1d)=0
+      name: 'Сбита дата'
+      opdata: 'Дата/время {ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: HIGH
+  graphs:
+    - uuid: cbdb315699e24307a8efc9d7f7a3bc2c
+      name: 'Доступность HTTP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: 'IP-camera Dahua'
+            key: 'net.tcp.service[http]'

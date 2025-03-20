@@ -1,0 +1,192 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: fad0b20d285543ee95b06a013cff3132
+      name: 'by d.bogach'
+  templates:
+    - uuid: 4c4b521365dc40b395871bcf125734b9
+      template: icmp_zabbix_availability
+      name: 'Доступность ICMP и Zabbix агента'
+      groups:
+        - name: 'by d.bogach'
+      items:
+        - uuid: d8d6cc63f9004465b235784f7c5856dd
+          name: 'Доступность ICMP'
+          type: SIMPLE
+          key: icmpping
+          history: 1w
+          trends: 90d
+          description: 'icmpping[,{$ICMP_PACKETS},{$ICMP_INTERVAL},{$ICMP_SIZE},{$ICMP_TIMEOUT}]'
+          triggers:
+            - uuid: f0c81e00cd184df38b27634a17ecf3a6
+              expression: 'max(/icmp_zabbix_availability/icmpping,#3)=0'
+              name: 'Хост недоступен (ICMP)'
+              opdata: 'ICMP{ITEM.LASTVALUE1}'
+              priority: DISASTER
+              manual_close: 'YES'
+        - uuid: 659f7bdad90e47cfb6b5e065cdb97b82
+          name: 'Процент потери пакетов ICMP'
+          type: SIMPLE
+          key: icmppingloss
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: '%'
+        - uuid: 70f218337a9845ceb07aa32f06ba2ada
+          name: 'Время отклика ICMP'
+          type: SIMPLE
+          key: icmppingsec
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: s
+        - uuid: ea1573bc34274da6a0c322e65fc677b7
+          name: 'Доступность Zabbix агента'
+          type: INTERNAL
+          key: 'zabbix[host,agent,available]'
+          history: 1w
+          trends: 90d
+          valuemap:
+            name: 'Статус Zabbix агента'
+      valuemaps:
+        - uuid: f7134d13b97141d0b28370994d541c2c
+          name: 'Статус Zabbix агента'
+          mappings:
+            - value: '0'
+              newvalue: Недоступен
+            - value: '1'
+              newvalue: Доступен
+            - value: '2'
+              newvalue: Неизвестно
+  triggers:
+    - uuid: 11b2b6a1c25945f793c0e68b5591f5ca
+      expression: |
+        min(/icmp_zabbix_availability/icmpping,#3)=1
+        and
+        max(/icmp_zabbix_availability/zabbix[host,agent,available],#3)=0
+      name: 'Zabbix агент недоступен'
+      opdata: 'Zabbix агент{ITEM.LASTVALUE2}'
+      priority: HIGH
+      dependencies:
+        - name: 'Хост недоступен (ICMP)'
+          expression: 'max(/icmp_zabbix_availability/icmpping,#3)=0'
+    - uuid: 27fc8f1b3d354d1a830396fab9e27b47
+      expression: |
+        last(/icmp_zabbix_availability/icmpping,#5)=1
+        and
+        avg(/icmp_zabbix_availability/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/icmp_zabbix_availability/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+    - uuid: 9a0c41bc4c494e3793e4306bea69a2b2
+      expression: |
+        last(/icmp_zabbix_availability/icmpping,#5)=1
+        and
+        avg(/icmp_zabbix_availability/icmppingsec,#5)>{$WARN_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/icmp_zabbix_availability/icmppingsec,#5)<{$WARN_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$WARN_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+          expression: |
+            last(/icmp_zabbix_availability/icmpping,#5)=1
+            and
+            avg(/icmp_zabbix_availability/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+          recovery_expression: 'avg(/icmp_zabbix_availability/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+    - uuid: af728db6f64948b5bc07b2ccabdbfc20
+      expression: |
+        last(/icmp_zabbix_availability/icmpping,#5)=1
+        and
+        avg(/icmp_zabbix_availability/icmppingloss,#5)>{$AVG_PING_LOSS}
+        and
+        avg(/icmp_zabbix_availability/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/icmp_zabbix_availability/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+      name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+      dependencies:
+        - name: 'Хост недоступен (ICMP)'
+          expression: 'max(/icmp_zabbix_availability/icmpping,#3)=0'
+    - uuid: 1b3f3cdabc9047d68b7b53f51e44d7d1
+      expression: |
+        last(/icmp_zabbix_availability/icmpping,#5)=1
+        and
+        avg(/icmp_zabbix_availability/icmppingloss,#5)>{$WARN_PING_LOSS}
+        and
+        avg(/icmp_zabbix_availability/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/icmp_zabbix_availability/icmppingloss,#5)=0'
+      name: 'Средний процент потери пакетов ICMP свыше {$WARN_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+          expression: |
+            last(/icmp_zabbix_availability/icmpping,#5)=1
+            and
+            avg(/icmp_zabbix_availability/icmppingloss,#5)>{$AVG_PING_LOSS}
+            and
+            avg(/icmp_zabbix_availability/icmppingloss,#5)<100
+          recovery_expression: 'avg(/icmp_zabbix_availability/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+  graphs:
+    - uuid: 8cff09f6f0354facabeb959dc051dab2
+      name: '1. ICMP loss'
+      show_triggers: 'NO'
+      graph_items:
+        - color: F44336
+          calc_fnc: ALL
+          item:
+            host: icmp_zabbix_availability
+            key: icmppingloss
+    - uuid: 8a44d350608a469da0a74a1382e53ac7
+      name: '1. Zabbix Agent'
+      show_triggers: 'NO'
+      graph_items:
+        - color: F44336
+          calc_fnc: ALL
+          item:
+            host: icmp_zabbix_availability
+            key: 'zabbix[host,agent,available]'
+    - uuid: 61b5e0f48d434e8786089d10550dde62
+      name: 'Время отклика ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: icmp_zabbix_availability
+            key: icmppingsec
+    - uuid: 6fd17032052a42739000d0b69bc12679
+      name: 'Доступность ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: icmp_zabbix_availability
+            key: icmpping
+    - uuid: 2c13787267ae4141b2eca933fc39214c
+      name: 'Доступность Zabbix агента'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: icmp_zabbix_availability
+            key: 'zabbix[host,agent,available]'
+    - uuid: 7d0911f88c0143bdb90e680d23c4f24b
+      name: 'Процент потери пакетов ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: icmp_zabbix_availability
+            key: icmppingloss

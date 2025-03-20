@@ -1,0 +1,30 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: fad0b20d285543ee95b06a013cff3132
+      name: 'by d.bogach'
+  templates:
+    - uuid: 513144c3b2164b83b79b0041f5b6231f
+      template: number_of_local_hosts
+      name: 'Подсчёт количества локальных хостов на маршрутизаторе'
+      groups:
+        - name: 'by d.bogach'
+      items:
+        - uuid: 7acfc2fa4dbc4bafa1e755f7ecedd8ff
+          name: 'Количество локальных хостов по DHCP'
+          type: CALCULATED
+          key: number_of_local_hosts
+          history: 1d
+          trends: 90d
+          params: 'item_count(//mac_address[*])'
+  graphs:
+    - uuid: c2986abfe2414ee49268af1405735f2a
+      name: 'Количество локальных хостов'
+      show_triggers: 'NO'
+      graph_items:
+        - drawtype: FILLED_REGION
+          color: 7CB342
+          calc_fnc: ALL
+          item:
+            host: number_of_local_hosts
+            key: number_of_local_hosts

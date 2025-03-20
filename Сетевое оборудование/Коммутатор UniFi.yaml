@@ -1,0 +1,192 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: fad0b20d285543ee95b06a013cff3132
+      name: 'by d.bogach'
+  templates:
+    - uuid: 61b920ebedc24affbc967c2dd6fa7a69
+      template: unifi_switch
+      name: 'Коммутатор UniFi'
+      templates:
+        - name: icmp_snmp_availability
+        - name: snmp_common_data
+      groups:
+        - name: 'by d.bogach'
+      items:
+        - uuid: 6f94cdad66574143ad33d4a9af95976d
+          name: 'Load average last 1 minute'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.2021.10.1.3.1
+          key: LoadMinute
+          history: 1w
+          value_type: CHAR
+          trends: '0'
+          tags:
+            - tag: Application
+              value: 'System Info'
+          triggers:
+            - uuid: f266e9834e3a4f9983846ea9ac97ca8a
+              expression: 'last(/unifi_switch/LoadMinute)>{$LOAD_AVG_PER_CPU.MAX.WARN}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/unifi_switch/LoadMinute)<{$LOAD_AVG_PER_CPU.MAX.WARN}'
+              name: 'Load average is too high (per CPU load over {$LOAD_AVG_PER_CPU.MAX.WARN} for 1m)'
+              opdata: 'Load averages(1m): {ITEM.LASTVALUE1}'
+              priority: AVERAGE
+              description: 'Per CPU load average is too high. Your system may be slow to respond.'
+        - uuid: f7872c28fdab4abcb90438411f02fd2c
+          name: 'Total amount of available memory'
+          type: SNMP_AGENT
+          snmp_oid: 'UCD-SNMP-MIB::memAvailReal.0'
+          key: MemAvailable
+          history: 1w
+          trends: '0'
+          units: b
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '1000'
+          tags:
+            - tag: Application
+              value: Memory
+        - uuid: d8c6cb9ccea2446f8867d1cbf972ada5
+          name: 'Total amount of buffers'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.2021.4.14.0
+          key: MemBuffers
+          history: 1w
+          trends: '0'
+          units: b
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '1000'
+          tags:
+            - tag: Application
+              value: Memory
+        - uuid: ef9fe685ef1c4ba19c95d17ae1d88d50
+          name: 'Total amount of cached'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.2021.4.15.0
+          key: MemCached
+          history: 1w
+          trends: '0'
+          units: b
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '1000'
+          tags:
+            - tag: Application
+              value: Memory
+        - uuid: 2db7e1ecdfac4ca996557bb9b8da264d
+          name: 'Total amount of memory'
+          type: SNMP_AGENT
+          snmp_oid: 'UCD-SNMP-MIB::memTotalReal.0'
+          key: MemTotal
+          history: 1w
+          trends: '0'
+          units: b
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '1000'
+          tags:
+            - tag: Application
+              value: Memory
+        - uuid: bd0734768248450ebaf30b447c91724b
+          name: 'Used memory'
+          type: CALCULATED
+          key: MemUsed
+          history: 1w
+          trends: '0'
+          units: B
+          params: last(//MemTotal)-last(//MemAvailable)
+          tags:
+            - tag: Application
+              value: Memory
+        - uuid: d162fed8c3894c4ab7de0ede0ab2056d
+          name: 'Memory utizilation'
+          type: CALCULATED
+          key: MemUtil
+          history: 1w
+          value_type: FLOAT
+          trends: '0'
+          units: '%'
+          params: '(last(//MemUsed)-last(//MemBuffers)-last(//MemCached))/last(//MemTotal)*100'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'return Math.floor(value)'
+          tags:
+            - tag: Application
+              value: Memory
+          triggers:
+            - uuid: 41a4ce6fbfff4398891d824030116a48
+              expression: 'min(/unifi_switch/MemUtil,5m)>{$MEMORY.UTIL.MAX}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/unifi_switch/MemUtil,5m)<{$MEMORY.UTIL.MAX}'
+              name: 'High memory utilization ( >{$MEMORY.UTIL.MAX}% for 5m)'
+              opdata: 'Memory utilization: {ITEM.LASTVALUE1}'
+              priority: WARNING
+              description: 'The system is running out of free memory.'
+        - uuid: e75d221c9f664da884c52ddcc3290da1
+          name: 'Uptime (hardware)'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.2.1.25.1.1.0
+          key: 'system.hw.uptime[hrSystemUptime.0]'
+          delay: 30s
+          history: 1w
+          trends: 0d
+          units: uptime
+          description: |
+            MIB: HOST-RESOURCES-MIB
+            The amount of time since this host was last initialized. Note that this is different from sysUpTime in the SNMPv2-MIB [RFC1907] because sysUpTime is the uptime of the network management portion of the system.
+          preprocessing:
+            - type: CHECK_NOT_SUPPORTED
+              parameters:
+                - '-1'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+          tags:
+            - tag: component
+              value: system
+        - uuid: 1efbcea615984917a2e564351b73b7f1
+          name: 'Uptime (network)'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.2.1.1.3.0
+          key: 'system.net.uptime[sysUpTime.0]'
+          delay: 30s
+          history: 1w
+          trends: 0d
+          units: uptime
+          description: |
+            MIB: SNMPv2-MIB
+            The time (in hundredths of a second) since the network management portion of the system was last re-initialized.
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+          tags:
+            - tag: component
+              value: system
+      macros:
+        - macro: '{$LOAD_AVG_PER_CPU.MAX.WARN}'
+          value: '1.5'
+          description: 'This macro is used as a threshold in memory utilization trigger.'
+        - macro: '{$MEMORY.UTIL.MAX}'
+          value: '90'
+          description: 'This macro is used as a threshold in memory utilization trigger.'
+  triggers:
+    - uuid: 4b57df65f3b04e67b9f5d7d1de545979
+      expression: '(last(/unifi_switch/system.hw.uptime[hrSystemUptime.0])>0 and last(/unifi_switch/system.hw.uptime[hrSystemUptime.0])<10m) or (last(/unifi_switch/system.hw.uptime[hrSystemUptime.0])=0 and last(/unifi_switch/system.net.uptime[sysUpTime.0])<10m)'
+      name: 'Host has been restarted'
+      event_name: '{HOST.NAME} has been restarted (uptime < 10m)'
+      priority: WARNING
+      description: 'Uptime is less than 10 minutes.'
+      manual_close: 'YES'
+      tags:
+        - tag: scope
+          value: notice

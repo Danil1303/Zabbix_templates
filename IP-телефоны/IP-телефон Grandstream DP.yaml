@@ -1,0 +1,318 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: fad0b20d285543ee95b06a013cff3132
+      name: 'by d.bogach'
+    - uuid: 1d12408342854fd5a4436dd6d5d1bd4a
+      name: Templates/Telephony
+  templates:
+    - uuid: 4e0235ad50764b72bf157d2179cd68ee
+      template: grandstream_dp_phone
+      name: 'IP-телефон Grandstream DP'
+      groups:
+        - name: 'by d.bogach'
+        - name: Templates/Telephony
+      items:
+        - uuid: 3cbc6b160a964e8e997f876494ab7904
+          name: 'Версия ПО'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.42397.1.2.3.7.0.0
+          key: fwver
+          delay: 1d
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          inventory_link: SOFTWARE
+          tags:
+            - tag: Application
+              value: 'Phone details'
+        - uuid: 0e5ee68cf92547fb80b9fd69bf0325ea
+          name: 'Доступность ICMP'
+          type: SIMPLE
+          key: icmpping
+          history: 1w
+          trends: 90d
+          description: 'icmpping[,{$ICMP_PACKETS},{$ICMP_INTERVAL},{$ICMP_SIZE},{$ICMP_TIMEOUT}]'
+          triggers:
+            - uuid: 2f374eaa43644c1e9c2d85b92ba877aa
+              expression: 'max(/grandstream_dp_phone/icmpping,#3)=0'
+              name: 'Хост недоступен (ICMP)'
+              opdata: 'ICMP{ITEM.LASTVALUE1}'
+              priority: DISASTER
+              manual_close: 'YES'
+        - uuid: 1f4b18350b444210bd45e73467fff51c
+          name: 'Процент потери пакетов ICMP'
+          type: SIMPLE
+          key: icmppingloss
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: '%'
+        - uuid: a3724d3308ad482ab1f354c5216bd2f0
+          name: 'Время отклика ICMP'
+          type: SIMPLE
+          key: icmppingsec
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: s
+        - uuid: b3b5c624fa4b46c29a43b1ea8119a528
+          name: MAC-адрес
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.5.0
+          key: mac_address
+          delay: 1d
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - _(.+)$
+                - \1
+            - type: REGEX
+              parameters:
+                - '(^.{2})(.{2})(.{2})(.{2})(.{2})(.{2})'
+                - '\1:\2:\3:\4:\5:\6'
+          tags:
+            - tag: Application
+              value: 'Phone details'
+        - uuid: ce6364a1e83a43eaaf41e975d68a2d6d
+          name: 'Модель телефона'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.5.0
+          key: model
+          delay: 1d
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - '.+?(?=_)'
+                - \0
+          tags:
+            - tag: Application
+              value: 'Phone details'
+        - uuid: a82e0bdc3e504916a33b15422aca8e9b
+          name: 'Account 1 SIP Registration'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.42397.1.3.2.1.1.0.0
+          key: regStatus1
+          history: 1w
+          status: DISABLED
+          tags:
+            - tag: Application
+              value: Status
+        - uuid: eac61677171848099c0f49f8061ff2d6
+          name: 'Account 2 SIP Registration'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.42397.1.3.2.1.2.0.0
+          key: regStatus2
+          history: 1w
+          status: DISABLED
+          tags:
+            - tag: Application
+              value: Status
+        - uuid: de4ac26434df4a10814886422afd03d7
+          name: 'Account 3 SIP Registration'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.42397.1.3.2.1.3.0.0
+          key: regStatus3
+          history: 1w
+          status: DISABLED
+          tags:
+            - tag: Application
+              value: Status
+        - uuid: 570f531140cc4756ac8e6074267aa600
+          name: 'Account 4 SIP Registration'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.42397.1.3.2.1.4.0.0
+          key: regStatus4
+          history: 1w
+          status: DISABLED
+          tags:
+            - tag: Application
+              value: Status
+        - uuid: 9a508591cdd24daaad4fdd33477bdf95
+          name: 'Account 5 SIP Registration'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.42397.1.3.2.1.5.0.0
+          key: regStatus5
+          history: 1w
+          status: DISABLED
+          tags:
+            - tag: Application
+              value: Status
+        - uuid: e447f50b79d6479ebf266994ecf15666
+          name: 'Account 6 SIP Registration'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.42397.1.3.2.1.6.0.0
+          key: regStatus6
+          history: 1w
+          status: DISABLED
+          tags:
+            - tag: Application
+              value: Status
+        - uuid: aaf28ad87aee4fd3a1fbd60f44b89872
+          name: 'Описание ОС'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.1.0
+          key: system
+          delay: 1d
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          inventory_link: OS
+          tags:
+            - tag: Application
+              value: 'Phone details'
+        - uuid: f018959b46b448dcac1ccd94e5a7695d
+          name: 'Время работы'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.3.0
+          key: uptime
+          history: 1w
+          value_type: FLOAT
+          units: uptime
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+        - uuid: 6bd002b1643545d0b4ccad07f9c5dec2
+          name: 'Доступность SNMP'
+          type: INTERNAL
+          key: 'zabbix[host,snmp,available]'
+          history: 1w
+          trends: 90d
+      valuemaps:
+        - uuid: 340c822995db4deabfea1d763162fcf6
+          name: 'GXP account status'
+          mappings:
+            - value: '0'
+              newvalue: Alarm
+            - value: '1'
+              newvalue: Ok
+  triggers:
+    - uuid: 703c14f300f34be7a712bd4bdac62b11
+      expression: |
+        min(/grandstream_dp_phone/icmpping,#3)=1
+        and
+        max(/grandstream_dp_phone/zabbix[host,snmp,available],#5)=0
+      name: 'SNMP недоступен'
+      opdata: 'SNMP{ITEM.LASTVALUE2}'
+      priority: HIGH
+      dependencies:
+        - name: 'Хост недоступен (ICMP)'
+          expression: 'max(/grandstream_dp_phone/icmpping,#3)=0'
+    - uuid: 72f6fbd98c8f44a8a9f794f36cfc85e5
+      expression: |
+        last(/grandstream_dp_phone/icmpping,#5)=1
+        and
+        avg(/grandstream_dp_phone/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/grandstream_dp_phone/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+    - uuid: b896a7f2747441798b88e4fff39c1eac
+      expression: |
+        last(/grandstream_dp_phone/icmpping,#5)=1
+        and
+        avg(/grandstream_dp_phone/icmppingsec,#5)>{$WARN_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/grandstream_dp_phone/icmppingsec,#5)<{$WARN_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$WARN_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+          expression: |
+            last(/grandstream_dp_phone/icmpping,#5)=1
+            and
+            avg(/grandstream_dp_phone/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+          recovery_expression: 'avg(/grandstream_dp_phone/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+    - uuid: a820c403c9214acaaad8293ea0e8b883
+      expression: |
+        last(/grandstream_dp_phone/icmpping,#5)=1
+        and
+        avg(/grandstream_dp_phone/icmppingloss,#5)>{$AVG_PING_LOSS}
+        and
+        avg(/grandstream_dp_phone/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/grandstream_dp_phone/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+      name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+      dependencies:
+        - name: 'Хост недоступен (ICMP)'
+          expression: 'max(/grandstream_dp_phone/icmpping,#3)=0'
+    - uuid: 5997b250f23545838c57bc0d41ae4271
+      expression: |
+        last(/grandstream_dp_phone/icmpping,#5)=1
+        and
+        avg(/grandstream_dp_phone/icmppingloss,#5)>{$WARN_PING_LOSS}
+        and
+        avg(/grandstream_dp_phone/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/grandstream_dp_phone/icmppingloss,#5)=0'
+      name: 'Средний процент потери пакетов ICMP свыше {$WARN_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+          expression: |
+            last(/grandstream_dp_phone/icmpping,#5)=1
+            and
+            avg(/grandstream_dp_phone/icmppingloss,#5)>{$AVG_PING_LOSS}
+            and
+            avg(/grandstream_dp_phone/icmppingloss,#5)<100
+          recovery_expression: 'avg(/grandstream_dp_phone/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+  graphs:
+    - uuid: 855c79ef2cd243d7801898f21b74f7d4
+      name: '1. ICMP loss'
+      show_triggers: 'NO'
+      graph_items:
+        - color: F44336
+          calc_fnc: ALL
+          item:
+            host: grandstream_dp_phone
+            key: icmppingloss
+    - uuid: bc0ec77e5f864974a0c030b5fad9cad9
+      name: 'Время отклика ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: grandstream_dp_phone
+            key: icmppingsec
+    - uuid: 25c16ce3f8634825b6b6fde6b8f21b63
+      name: 'Доступность ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: grandstream_dp_phone
+            key: icmpping
+    - uuid: 71d2be8976f74d77af7bfecad2dd77f3
+      name: 'Доступность SNMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: grandstream_dp_phone
+            key: 'zabbix[host,snmp,available]'
+    - uuid: de69b04e2e8b434eae2e77ed2ffa96ab
+      name: 'Процент потери пакетов ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: grandstream_dp_phone
+            key: icmppingloss

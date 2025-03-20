@@ -1,0 +1,897 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: fad0b20d285543ee95b06a013cff3132
+      name: 'by d.bogach'
+    - uuid: d37f71c7e3f7469bab645852a69a2018
+      name: 'Templates/Video surveillance'
+  templates:
+    - uuid: e8da2633841d455b8220b638f56881c9
+      template: videoregister_trassir_by_snmp
+      name: 'Видеорегистратор Trassir SNMP'
+      groups:
+        - name: 'by d.bogach'
+        - name: 'Templates/Video surveillance'
+      items:
+        - uuid: 413984044caa4921a8c31f3321785346
+          name: 'Глубина архива'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.3333.1.2
+          key: archive_days
+          history: 1w
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 9947a9d485ec4baeab71aa07c3049d8c
+          name: 'Статус облака'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.3333.1.7
+          key: cloud_status
+          history: 1w
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: b3bbaa52ee014f89b72390dbd64afa60
+          name: 'Загрузка CPU'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.3333.1.8
+          key: cpu_load
+          history: 1w
+          value_type: FLOAT
+          trends: 90d
+          units: '%'
+          preprocessing:
+            - type: RTRIM
+              parameters:
+                - '%'
+        - uuid: bf4ed0296c7e4a6390b3a8847d201957
+          name: 'Статус БД'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.3333.1.1
+          key: db_status
+          history: 1w
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: e90841ef1c2740cd98c1e86ad8f95bf2
+          name: 'Статус дисков'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.3333.1.3
+          key: disks_status
+          history: 1w
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 0f88f6e3b8f04a60944b3eb09f8f7339
+          name: 'Время непрерывной работы устройства'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.25.1.1.0
+          key: host_uptime
+          history: 1w
+          trends: 90d
+          units: uptime
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+          triggers:
+            - uuid: 71de7730c6c14d168df7dfc3cc722ccc
+              expression: last(/videoregister_trassir_by_snmp/host_uptime)<35m
+              name: 'Устройство было перезапущено'
+              opdata: 'Время работы -{ITEM.LASTVALUE1}'
+              priority: WARNING
+        - uuid: e2445dfcf9674e7791355acb0a43034e
+          name: 'Доступность ICMP'
+          type: SIMPLE
+          key: icmpping
+          history: 1w
+          trends: 90d
+          description: 'icmpping[,{$ICMP_PACKETS},{$ICMP_INTERVAL},{$ICMP_SIZE},{$ICMP_TIMEOUT}]'
+          triggers:
+            - uuid: 9d51c7263c814d38a0c775eb561a4c5b
+              expression: 'max(/videoregister_trassir_by_snmp/icmpping,#3)=0'
+              name: 'Хост недоступен (ICMP)'
+              opdata: 'ICMP{ITEM.LASTVALUE1}'
+              priority: DISASTER
+              manual_close: 'YES'
+        - uuid: b5b933b13db7486084ab462682ba82c3
+          name: 'Процент потери пакетов ICMP'
+          type: SIMPLE
+          key: icmppingloss
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: '%'
+        - uuid: fd563742fd254086be3ca10b43eb11dd
+          name: 'Время отклика ICMP'
+          type: SIMPLE
+          key: icmppingsec
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: s
+        - uuid: f490beeb46634f30859741291d3f5e98
+          name: 'Доступность порта управления'
+          type: SIMPLE
+          key: 'net.tcp.service[http,,{$MANAGEMENT_PORT}]'
+          history: 1w
+          trends: 90d
+          valuemap:
+            name: 'Доступность портов'
+          triggers:
+            - uuid: 70504cade14e4b168c8eba3b707fdc68
+              expression: 'max(/videoregister_trassir_by_snmp/net.tcp.service[http,,{$MANAGEMENT_PORT}],#5)=0'
+              name: 'Порт управления недоступен'
+              opdata: '{ITEM.LASTVALUE1}'
+              priority: DISASTER
+              manual_close: 'YES'
+              dependencies:
+                - name: 'Хост недоступен (ICMP)'
+                  expression: 'max(/videoregister_trassir_by_snmp/icmpping,#3)=0'
+        - uuid: b306ed85e7064fe5a8f5d861f25e840c
+          name: 'Доступность порта видео'
+          type: SIMPLE
+          key: 'net.tcp.service[http,,{$VIDEO_PORT}]'
+          history: 1w
+          trends: 90d
+          valuemap:
+            name: 'Доступность портов'
+          triggers:
+            - uuid: 002dbab5fe9644429d5f834e916a8113
+              expression: 'max(/videoregister_trassir_by_snmp/net.tcp.service[http,,{$VIDEO_PORT}],#5)=0'
+              name: 'Порт видео недоступен'
+              opdata: '{ITEM.LASTVALUE1}'
+              priority: DISASTER
+              manual_close: 'YES'
+              dependencies:
+                - name: 'Хост недоступен (ICMP)'
+                  expression: 'max(/videoregister_trassir_by_snmp/icmpping,#3)=0'
+        - uuid: 870a0caf4501418685d6be5f1b83ac1f
+          name: 'Статус сети'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.3333.1.4
+          key: network_status
+          history: 1w
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: d4664e42b72445a5869410b8a4f7ddcd
+          name: 'Количество камер'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.3333.1.5
+          key: number_of_cameras
+          history: 1w
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 7bc01521120647589e2f71a1b9f16a63
+          name: 'Статус скриптов'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.3333.1.6
+          key: scripts_status
+          history: 1w
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: a21e0ea74f0c43059d3c9dd483350874
+          name: 'SNMP traps (fallback)'
+          type: SNMP_TRAP
+          key: snmptrap.fallback
+          delay: '0'
+          history: 1w
+          value_type: LOG
+          trends: '0'
+          status: DISABLED
+          logtimefmt: 'hh:mm:sszyyyy/MM/dd'
+        - uuid: 68612493ff854a69824dc4498c170201
+          name: 'Системные дата и время'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.25.1.2.0
+          key: system_date_and_time
+          history: 1w
+          value_type: CHAR
+          trends: '0'
+        - uuid: b8cf859d97c341fa887b0ca5762d3adf
+          name: 'Контактная информация'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.4.0
+          key: sys_contact
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          inventory_link: CONTACT
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: a90c1cc615f84333b2476934b0561d5c
+          name: Описание
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.1.0
+          key: sys_description
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          inventory_link: NOTES
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 3073f36206164eeab7c2177227945832
+          name: Местоположение
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.6.0
+          key: sys_location
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          inventory_link: LOCATION
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 20f0655d01d24a6e944716eb15cc2ae3
+          name: 'Имя хоста'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.5.0
+          key: sys_name
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          inventory_link: ALIAS
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: e23111204ec545a281fc1ec93da649d7
+          name: 'ID объекта'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.2.0
+          key: sys_object_id
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 4cdd0b8e593b4b989c87cbb2487d0af7
+          name: Сервисы
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.7.0
+          key: sys_services
+          delay: 1h
+          history: 1w
+          value_type: TEXT
+          trends: '0'
+          status: DISABLED
+          preprocessing:
+            - type: CHECK_NOT_SUPPORTED
+              parameters:
+                - '-1'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: 'Не поддерживается'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 5b9f3e999a324fdf8d945446fc22c7ae
+          name: 'Время непрерывной работы службы SNMP'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.1.3.0
+          key: sys_uptime
+          history: 1w
+          trends: 90d
+          units: uptime
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+          triggers:
+            - uuid: 8da7b89d6167491bb7a2262d05da29fe
+              expression: last(/videoregister_trassir_by_snmp/sys_uptime)<30m
+              name: 'Служба SNMP была перезапущена'
+              opdata: 'Время работы -{ITEM.LASTVALUE1}'
+              priority: WARNING
+              dependencies:
+                - name: 'Устройство было перезапущено'
+                  expression: last(/videoregister_trassir_by_snmp/host_uptime)<35m
+        - uuid: c97147c3d7da4e2cb0a1aed6639d96d8
+          name: 'Доступность SNMP'
+          type: INTERNAL
+          key: 'zabbix[host,snmp,available]'
+          history: 1w
+          trends: 90d
+      discovery_rules:
+        - uuid: e1e2506370f749c198132d59b555da83
+          name: Интерфейсы
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#IFDESCR},.1.3.6.1.2.1.2.2.1.2,{#IFTYPE},.1.3.6.1.2.1.2.2.1.3,{#IFMTU},.1.3.6.1.2.1.2.2.1.4,{#IFSPEED},.1.3.6.1.2.1.2.2.1.5,{#IFPHYSADDRESS},.1.3.6.1.2.1.2.2.1.6,{#IFADMINSTATUS},.1.3.6.1.2.1.2.2.1.7,{#IFOPERSTATUS},.1.3.6.1.2.1.2.2.1.8,{#IFLASTCHANGE},.1.3.6.1.2.1.2.2.1.9,{#IFNAME},1.3.6.1.2.1.31.1.1.1.1, {#IFALIAS},1.3.6.1.2.1.31.1.1.1.18]'
+          key: interfaces_discovery
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#IFADMINSTATUS}'
+                value: '{$NET.IF.IFADMINSTATUS.MATCHES}'
+                formulaid: A
+              - macro: '{#IFADMINSTATUS}'
+                value: '{$NET.IF.IFADMINSTATUS.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: B
+              - macro: '{#IFALIAS}'
+                value: '{$NET.IF.IFALIAS.MATCHES}'
+                formulaid: C
+              - macro: '{#IFALIAS}'
+                value: '{$NET.IF.IFALIAS.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: D
+              - macro: '{#IFDESCR}'
+                value: '{$NET.IF.IFDESCR.MATCHES}'
+                formulaid: E
+              - macro: '{#IFDESCR}'
+                value: '{$NET.IF.IFDESCR.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: F
+              - macro: '{#IFNAME}'
+                value: '{$NET.IF.IFNAME.MATCHES}'
+                formulaid: G
+              - macro: '{#IFNAME}'
+                value: '{$NET.IF.IFNAME.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: H
+              - macro: '{#IFOPERSTATUS}'
+                value: '{$NET.IF.IFOPERSTATUS.MATCHES}'
+                formulaid: I
+              - macro: '{#IFOPERSTATUS}'
+                value: '{$NET.IF.IFOPERSTATUS.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: J
+              - macro: '{#IFTYPE}'
+                value: '{$NET.IF.IFTYPE.MATCHES}'
+                formulaid: K
+              - macro: '{#IFTYPE}'
+                value: '{$NET.IF.IFTYPE.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: L
+          item_prototypes:
+            - uuid: 9c48ccdee4e14635a6638f05f83636dc
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Административное состояние'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.7.{#SNMPINDEX}'
+              key: 'admin_status[interface_№{#SNMPINDEX}]'
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+            - uuid: 084bca39972046ca9485b9ee9d15e945
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Описание'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.2.{#SNMPINDEX}'
+              key: 'description[interface_№{#SNMPINDEX}]'
+              delay: 1h
+              history: 1w
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+            - uuid: 42800a98e3d74f86938d3875b28dc89e
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifInDiscards'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.13.{#SNMPINDEX}'
+              key: 'in_discards[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество входящих, но отвергнутых пакетов, даже если не было обнаружено ошибок, мешающих доставке пакетов на верхний уровень стека сетевых протоколов. Одной из возможных причин для отвержения пакета могло быть освобождение места в буфере.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: e9be11b968244cb799302654910886df
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifInErrors'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.14.{#SNMPINDEX}'
+              key: 'in_errors[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество входящих пакетов, полученных с ошибкой, из-за которой пакеты не были доставлены на верхний уровень стека сетевых протоколов.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: b1f48b60d13446798bfd1b251377f4aa
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifInNUcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.12.{#SNMPINDEX}'
+              key: 'in_n_ucast_pkts[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество пакетов НЕ одноадресной рассылки (broadcast и multicast), доставленных на верхний уровень стека сетевых протоколов.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: c578f2e4dbc44b25b5498ea795ea4ca6
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Входящий трафик (ifInOctets)'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.10.{#SNMPINDEX}'
+              key: 'in_octets[interface_№{#SNMPINDEX}]'
+              history: 1w
+              trends: 30d
+              units: bps
+              description: 'Полное число полученных байтов, включая символы заголовков.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+            - uuid: 8ad5b0e3d0bd46cbb265456c3cfd5e19
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifInUcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.11.{#SNMPINDEX}'
+              key: 'in_ucast_pkts[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество пакетов одноадресной рассылки, доставленных на верхний уровень стека сетевых протоколов.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 257d53a7c4d647cda11bcf6d24888cd7
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifInUnknownProtos'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.15.{#SNMPINDEX}'
+              key: 'in_unknown_protos[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество пакетов, полученных через интерфейс, но отвергнутых из-за неизвестного или не поддерживаемого протокола.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 755b8bb9ef404b64b9837c8b4d672920
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Последнее изменение'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.9.{#SNMPINDEX}'
+              key: 'last_change[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              value_type: FLOAT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: s
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.01'
+            - uuid: 44975c1a2316470990c4c82aba4c1f58
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Размер наибольшей получаемой/отправляемой датаграммы'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.4.{#SNMPINDEX}'
+              key: 'mtu[inteface_№{#SNMPINDEX}]'
+              delay: 1h
+              history: 1w
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: B
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+            - uuid: 657d79a9a2a8490ca7c25009a1ec91f1
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Оперативное состояние'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.8.{#SNMPINDEX}'
+              key: 'oper_status[interface_№{#SNMPINDEX}]'
+              history: 1d
+              trends: 90d
+              trigger_prototypes:
+                - uuid: 0118c887474041f2ac785b523b7f7d04
+                  expression: |
+                    {$IFCONTROL:"{#IFNAME}"}=1 
+                    and 
+                    last(/videoregister_trassir_by_snmp/oper_status[interface_№{#SNMPINDEX}],#1)=2 
+                    and
+                    last(/videoregister_trassir_by_snmp/oper_status[interface_№{#SNMPINDEX}],#2)=2
+                    and 
+                    (last(/videoregister_trassir_by_snmp/oper_status[interface_№{#SNMPINDEX}],#2)<>last(/videoregister_trassir_by_snmp/oper_status[interface_№{#SNMPINDEX}],#3))
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: |
+                    last(/videoregister_trassir_by_snmp/oper_status[interface_№{#SNMPINDEX}])<>2 
+                    or 
+                    {$IFCONTROL:"{#IFNAME}"}=0
+                    or
+                    trendavg(/videoregister_trassir_by_snmp/oper_status[interface_№{#SNMPINDEX}],30d:now/d)=2
+                  name: 'Интерфейс {#IFNAME}({#IFALIAS}): пропал линк'
+                  opdata: '{ITEM.LASTVALUE1}'
+                  priority: AVERAGE
+                  manual_close: 'YES'
+            - uuid: df17b9bf573442a99906542ffeb88ace
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifOutDiscards'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.19.{#SNMPINDEX}'
+              key: 'out_discards[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество исходящих пакетов, которые были отвергнуты даже если не было обнаружено ошибок, мешающих отправке. Одной из возможных причин отвержения пакета могло быть освобождение места в буфере.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 6b20658e3fbd4a458f9fe242c0b54880
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifOutErrors'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.20.{#SNMPINDEX}'
+              key: 'out_errors[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Количество исходящих пакетов, которые не могут быть отправлены из-за ошибок.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 1c1467998fd54bd28cdd123870795da0
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifOutNUcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.18.{#SNMPINDEX}'
+              key: 'out_n_ucast_pkts[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Полное количество пакетов, которые пытался отправить верхний уровень стека сетевых протоколов, и которые адресованы на broadcast или multicast адреса на этом суб-уровне, включая те, которые были отвергнуты или не отправлены.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 8b9e212f384f4a3d8eff0702caf730a8
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Исходящий трафик (ifOutOctets)'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.16.{#SNMPINDEX}'
+              key: 'out_octets[interface_№{#SNMPINDEX}]'
+              history: 1w
+              trends: 30d
+              units: bps
+              description: 'Полное количество отправленных октетов с интерфейса, включая символы заголовков.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+            - uuid: e796bda1acc34bdf8b3151c1eee35629
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifOutQLen'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.21.{#SNMPINDEX}'
+              key: 'out_qlen[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              description: 'Длина очереди исходящих пакетов (в пакетах).'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: f7c0c12fd5a3491099cd4e46ffcfa469
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): ifOutUcastPkts'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.17.{#SNMPINDEX}'
+              key: 'out_ucast_pkts[interface_№{#SNMPINDEX}]'
+              delay: 3m
+              history: 1w
+              trends: 30d
+              status: DISABLED
+              discover: NO_DISCOVER
+              description: 'Полное количество пакетов, которые пытался отправить верхний уровень стека сетевых протоколов, и которые адресованы НЕ на broadcast или multicast адреса на этом суб-уровне, включая те, которые были отвергнуты или не отправлены.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+            - uuid: 8c72b5ed405a4f3ba99ec12e207d2e35
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): MAC адрес'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.6.{#SNMPINDEX}'
+              key: 'phys_address[interface_№{#SNMPINDEX}]'
+              delay: 1h
+              history: 1w
+              value_type: TEXT
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+            - uuid: 725671693c794a82887173d11f72f1f5
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Пропускная способность'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.5.{#SNMPINDEX}'
+              key: 'speed[interface_№{#SNMPINDEX}]'
+              delay: 1h
+              history: 1w
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bps
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+            - uuid: 6907fcb6f4ff496da81db085a46547f5
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): Тип'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.2.2.1.3.{#SNMPINDEX}'
+              key: 'type[interface_№{#SNMPINDEX}]'
+              delay: 1h
+              history: 1w
+              trends: '0'
+              status: DISABLED
+              discover: NO_DISCOVER
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+          graph_prototypes:
+            - uuid: 5676af7dac984eefb07d7c6bdbb47125
+              name: 'Административный статус интерфейса {#IFNAME}({#IFALIAS})'
+              yaxismin: '0.5'
+              yaxismax: '2.5'
+              show_triggers: 'NO'
+              ymin_type_1: FIXED
+              ymax_type_1: FIXED
+              graph_items:
+                - color: 1A7C11
+                  calc_fnc: ALL
+                  item:
+                    host: videoregister_trassir_by_snmp
+                    key: 'admin_status[interface_№{#SNMPINDEX}]'
+            - uuid: a95ed672e14b4ef18cdf23698974f7c3
+              name: 'Оперативный статус интерфейса {#IFNAME}({#IFALIAS})'
+              yaxismin: '0.5'
+              yaxismax: '2.5'
+              show_triggers: 'NO'
+              ymin_type_1: FIXED
+              ymax_type_1: FIXED
+              graph_items:
+                - color: 1A7C11
+                  calc_fnc: ALL
+                  item:
+                    host: videoregister_trassir_by_snmp
+                    key: 'oper_status[interface_№{#SNMPINDEX}]'
+            - uuid: d7b19051e9dd413ba866c42ec3797adb
+              name: 'Сетевой трафик на интерфейсе {#IFNAME}({#IFALIAS})'
+              show_triggers: 'NO'
+              ymin_type_1: FIXED
+              graph_items:
+                - drawtype: FILLED_REGION
+                  color: AED581
+                  calc_fnc: ALL
+                  item:
+                    host: videoregister_trassir_by_snmp
+                    key: 'in_octets[interface_№{#SNMPINDEX}]'
+                - sortorder: '1'
+                  drawtype: FILLED_REGION
+                  color: AFB42B
+                  calc_fnc: ALL
+                  item:
+                    host: videoregister_trassir_by_snmp
+                    key: 'out_octets[interface_№{#SNMPINDEX}]'
+      macros:
+        - macro: '{$MANAGEMENT_PORT}'
+          value: '3080'
+        - macro: '{$VIDEO_PORT}'
+          value: '3081'
+      valuemaps:
+        - uuid: f20298afa53f4ff8ac23c582e8a8d09b
+          name: 'Доступность портов'
+          mappings:
+            - value: '0'
+              newvalue: 'Порт недоступен'
+            - value: '1'
+              newvalue: 'Порт доступен'
+  triggers:
+    - uuid: 56bfbdf9ac194d9b9412fc3c2ae2554b
+      expression: |
+        min(/videoregister_trassir_by_snmp/icmpping,#3)=1
+        and
+        max(/videoregister_trassir_by_snmp/zabbix[host,snmp,available],#5)=0
+      name: 'SNMP недоступен'
+      opdata: 'SNMP{ITEM.LASTVALUE2}'
+      priority: HIGH
+      dependencies:
+        - name: 'Хост недоступен (ICMP)'
+          expression: 'max(/videoregister_trassir_by_snmp/icmpping,#3)=0'
+    - uuid: f0b141bd6a0447bba0876717f4704945
+      expression: |
+        last(/videoregister_trassir_by_snmp/icmpping,#5)=1
+        and
+        avg(/videoregister_trassir_by_snmp/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/videoregister_trassir_by_snmp/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+    - uuid: 06fe303a8bee4ed99c12b36eb3a2b3d1
+      expression: |
+        last(/videoregister_trassir_by_snmp/icmpping,#5)=1
+        and
+        avg(/videoregister_trassir_by_snmp/icmppingsec,#5)>{$WARN_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/videoregister_trassir_by_snmp/icmppingsec,#5)<{$WARN_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$WARN_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+          expression: |
+            last(/videoregister_trassir_by_snmp/icmpping,#5)=1
+            and
+            avg(/videoregister_trassir_by_snmp/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+          recovery_expression: 'avg(/videoregister_trassir_by_snmp/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+    - uuid: c0ebc508c7bc4ac49b328fb350d66646
+      expression: |
+        last(/videoregister_trassir_by_snmp/icmpping,#5)=1
+        and
+        avg(/videoregister_trassir_by_snmp/icmppingloss,#5)>{$AVG_PING_LOSS}
+        and
+        avg(/videoregister_trassir_by_snmp/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/videoregister_trassir_by_snmp/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+      name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+      dependencies:
+        - name: 'Хост недоступен (ICMP)'
+          expression: 'max(/videoregister_trassir_by_snmp/icmpping,#3)=0'
+    - uuid: 4c68219103bc49878ad8fe7e72f579b7
+      expression: |
+        last(/videoregister_trassir_by_snmp/icmpping,#5)=1
+        and
+        avg(/videoregister_trassir_by_snmp/icmppingloss,#5)>{$WARN_PING_LOSS}
+        and
+        avg(/videoregister_trassir_by_snmp/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/videoregister_trassir_by_snmp/icmppingloss,#5)=0'
+      name: 'Средний процент потери пакетов ICMP свыше {$WARN_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+          expression: |
+            last(/videoregister_trassir_by_snmp/icmpping,#5)=1
+            and
+            avg(/videoregister_trassir_by_snmp/icmppingloss,#5)>{$AVG_PING_LOSS}
+            and
+            avg(/videoregister_trassir_by_snmp/icmppingloss,#5)<100
+          recovery_expression: 'avg(/videoregister_trassir_by_snmp/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+  graphs:
+    - uuid: 3a874728d033485099791a6258da6ec7
+      name: '1. ICMP loss'
+      show_triggers: 'NO'
+      graph_items:
+        - color: F44336
+          calc_fnc: ALL
+          item:
+            host: videoregister_trassir_by_snmp
+            key: icmppingloss
+    - uuid: c8e18e9f8ab843e5b2807811967d29c5
+      name: 'Время непрерывной работы устройства'
+      show_triggers: 'NO'
+      graph_items:
+        - drawtype: FILLED_REGION
+          color: 0040FF
+          calc_fnc: ALL
+          item:
+            host: videoregister_trassir_by_snmp
+            key: host_uptime
+    - uuid: 222b3170cf944c5683bdf7a7bba82c06
+      name: 'Время отклика ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: videoregister_trassir_by_snmp
+            key: icmppingsec
+    - uuid: 46e90a09ef01476b9def7626602dd708
+      name: 'Доступность ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: videoregister_trassir_by_snmp
+            key: icmpping
+    - uuid: 0c99e25b5b4141f687bb6b21bb906e43
+      name: 'Доступность SNMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: videoregister_trassir_by_snmp
+            key: 'zabbix[host,snmp,available]'
+    - uuid: 0ddcc8b1bfc54e118e93fe3d6e79c2d8
+      name: 'Загрузка процессора'
+      type: STACKED
+      ymin_type_1: FIXED
+      ymax_type_1: FIXED
+      graph_items:
+        - drawtype: FILLED_REGION
+          color: 1A7C11
+          calc_fnc: MIN
+          item:
+            host: videoregister_trassir_by_snmp
+            key: cpu_load
+    - uuid: abb68449eb564580a7f1e7e130136458
+      name: 'Процент потери пакетов ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: videoregister_trassir_by_snmp
+            key: icmppingloss

@@ -1,0 +1,183 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: fad0b20d285543ee95b06a013cff3132
+      name: 'by d.bogach'
+  templates:
+    - uuid: 5374a517cb1f49a9a3959bd9fd26590e
+      template: icmp_snmp_availability
+      name: 'Доступность ICMP и SNMP'
+      groups:
+        - name: 'by d.bogach'
+      items:
+        - uuid: e06ef066c2a7481cbdbdcbe18d62dd17
+          name: 'Доступность ICMP'
+          type: SIMPLE
+          key: icmpping
+          history: 1w
+          trends: 90d
+          description: 'icmpping[,{$ICMP_PACKETS},{$ICMP_INTERVAL},{$ICMP_SIZE},{$ICMP_TIMEOUT}]'
+          triggers:
+            - uuid: de980880ba26417883546665922dae75
+              expression: 'max(/icmp_snmp_availability/icmpping,#3)=0'
+              name: 'Хост недоступен (ICMP)'
+              opdata: 'ICMP{ITEM.LASTVALUE1}'
+              priority: DISASTER
+              manual_close: 'YES'
+        - uuid: e5897f932e574265a324eb86aa75295e
+          name: 'Процент потери пакетов ICMP'
+          type: SIMPLE
+          key: icmppingloss
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: '%'
+        - uuid: 9647731078784faba3fff8d69d4f5f79
+          name: 'Время отклика ICMP'
+          type: SIMPLE
+          key: icmppingsec
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: s
+        - uuid: 74d9adf4b6d749e2ae01f8e16e29eb52
+          name: 'Доступность SNMP'
+          type: INTERNAL
+          key: 'zabbix[host,snmp,available]'
+          history: 1w
+          trends: 90d
+          valuemap:
+            name: Доступность
+      valuemaps:
+        - uuid: 897dd645084f40be8eca32b6f3d26d3c
+          name: Доступность
+          mappings:
+            - value: '0'
+              newvalue: Недоступен
+            - value: '1'
+              newvalue: Доступен
+            - value: '2'
+              newvalue: Неизвестно
+  triggers:
+    - uuid: 11554cabc28a4eb78e1d005bb037fabc
+      expression: |
+        min(/icmp_snmp_availability/icmpping,#3)=1
+        and
+        max(/icmp_snmp_availability/zabbix[host,snmp,available],#5)=0
+      name: 'SNMP недоступен'
+      opdata: 'SNMP{ITEM.LASTVALUE2}'
+      priority: HIGH
+      dependencies:
+        - name: 'Хост недоступен (ICMP)'
+          expression: 'max(/icmp_snmp_availability/icmpping,#3)=0'
+    - uuid: ff4cdc2d60104984b89eaf54e0da5ab4
+      expression: |
+        last(/icmp_snmp_availability/icmpping,#5)=1
+        and
+        avg(/icmp_snmp_availability/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/icmp_snmp_availability/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+    - uuid: 8c73a841c84f4201af047a913e3123b9
+      expression: |
+        last(/icmp_snmp_availability/icmpping,#5)=1
+        and
+        avg(/icmp_snmp_availability/icmppingsec,#5)>{$WARN_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/icmp_snmp_availability/icmppingsec,#5)<{$WARN_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$WARN_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+          expression: |
+            last(/icmp_snmp_availability/icmpping,#5)=1
+            and
+            avg(/icmp_snmp_availability/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+          recovery_expression: 'avg(/icmp_snmp_availability/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+    - uuid: e1a72e0488b8476fb9ac1f320c096102
+      expression: |
+        last(/icmp_snmp_availability/icmpping,#5)=1
+        and
+        avg(/icmp_snmp_availability/icmppingloss,#5)>{$AVG_PING_LOSS}
+        and
+        avg(/icmp_snmp_availability/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/icmp_snmp_availability/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+      name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+      dependencies:
+        - name: 'Хост недоступен (ICMP)'
+          expression: 'max(/icmp_snmp_availability/icmpping,#3)=0'
+    - uuid: c12fab9dc3574c7a8463b6c7bc95e120
+      expression: |
+        last(/icmp_snmp_availability/icmpping,#5)=1
+        and
+        avg(/icmp_snmp_availability/icmppingloss,#5)>{$WARN_PING_LOSS}
+        and
+        avg(/icmp_snmp_availability/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/icmp_snmp_availability/icmppingloss,#5)=0'
+      name: 'Средний процент потери пакетов ICMP свыше {$WARN_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+          expression: |
+            last(/icmp_snmp_availability/icmpping,#5)=1
+            and
+            avg(/icmp_snmp_availability/icmppingloss,#5)>{$AVG_PING_LOSS}
+            and
+            avg(/icmp_snmp_availability/icmppingloss,#5)<100
+          recovery_expression: 'avg(/icmp_snmp_availability/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+  graphs:
+    - uuid: 3c482208349a4fae84c7a9ae25f0cecb
+      name: '1. ICMP loss'
+      show_triggers: 'NO'
+      graph_items:
+        - color: F44336
+          calc_fnc: ALL
+          item:
+            host: icmp_snmp_availability
+            key: icmppingloss
+    - uuid: a8c6c5574f344075836179538f05cf25
+      name: 'Время отклика ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: icmp_snmp_availability
+            key: icmppingsec
+    - uuid: 41bbfce969564afbb987df3432256da7
+      name: 'Доступность ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: icmp_snmp_availability
+            key: icmpping
+    - uuid: 3ad66419611f4a21a5cb0cdc23a341e0
+      name: 'Доступность SNMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: icmp_snmp_availability
+            key: 'zabbix[host,snmp,available]'
+    - uuid: cb827be1995b4ad19c99ba66de39f3dd
+      name: 'Процент потери пакетов ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: icmp_snmp_availability
+            key: icmppingloss

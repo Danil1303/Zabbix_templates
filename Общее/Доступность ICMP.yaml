@@ -1,0 +1,174 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: fad0b20d285543ee95b06a013cff3132
+      name: 'by d.bogach'
+  templates:
+    - uuid: fa570122e5a44e958aa77555cba7e9e1
+      template: icmp_availability
+      name: 'Доступность ICMP'
+      groups:
+        - name: 'by d.bogach'
+      items:
+        - uuid: dcca16a0803745f5bb84eb52f10e0152
+          name: 'Доступность ICMP'
+          type: SIMPLE
+          key: icmpping
+          history: 1w
+          trends: 90d
+          description: 'icmpping[,{$ICMP_PACKETS},{$ICMP_INTERVAL},{$ICMP_SIZE},{$ICMP_TIMEOUT}]'
+          valuemap:
+            name: Доступность
+          triggers:
+            - uuid: b90927e33921484a9cb6bf93f6897a89
+              expression: 'max(/icmp_availability/icmpping,#3)=0'
+              name: 'Хост недоступен (ICMP)'
+              opdata: 'ICMP{ITEM.LASTVALUE1}'
+              priority: DISASTER
+              manual_close: 'YES'
+        - uuid: 41665c7191d645aaac9f6e78132138a4
+          name: 'Процент потери пакетов ICMP'
+          type: SIMPLE
+          key: icmppingloss
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: '%'
+        - uuid: c5d9c265f0714ecb8ea213815f1b9f28
+          name: 'Время отклика ICMP'
+          type: SIMPLE
+          key: icmppingsec
+          history: 1w
+          value_type: FLOAT
+          trends: 30d
+          units: s
+      macros:
+        - macro: '{$AVG_PING_LOSS}'
+          value: '50'
+        - macro: '{$AVG_PING_TIME}'
+          value: '700'
+        - macro: '{$ICMP_INTERVAL}'
+          value: '20'
+        - macro: '{$ICMP_PACKETS}'
+          value: '3'
+        - macro: '{$ICMP_SIZE}'
+          value: '56'
+        - macro: '{$ICMP_TIMEOUT}'
+          value: '1000'
+        - macro: '{$WARN_PING_LOSS}'
+          value: '25'
+        - macro: '{$WARN_PING_TIME}'
+          value: '300'
+      valuemaps:
+        - uuid: bffe62b3018042e4a5b11252383335e1
+          name: Доступность
+          mappings:
+            - value: '0'
+              newvalue: Недоступен
+            - value: '1'
+              newvalue: Доступен
+            - value: '2'
+              newvalue: Неизвестно
+  triggers:
+    - uuid: 85c0504a9c9d48b6a8e09f8e8b516ec0
+      expression: |
+        last(/icmp_availability/icmpping,#5)=1
+        and
+        avg(/icmp_availability/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/icmp_availability/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+    - uuid: 95317e697a33407a9cfdbf5d5c4e01d1
+      expression: |
+        last(/icmp_availability/icmpping,#5)=1
+        and
+        avg(/icmp_availability/icmppingsec,#5)>{$WARN_PING_TIME}/1000
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/icmp_availability/icmppingsec,#5)<{$WARN_PING_TIME}/1000-0.1'
+      name: 'Среднее время отклика ICMP свыше {$WARN_PING_TIME} мс'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Среднее время отклика ICMP свыше {$AVG_PING_TIME} мс'
+          expression: |
+            last(/icmp_availability/icmpping,#5)=1
+            and
+            avg(/icmp_availability/icmppingsec,#5)>{$AVG_PING_TIME}/1000
+          recovery_expression: 'avg(/icmp_availability/icmppingsec,#5)<{$AVG_PING_TIME}/1000-0.1'
+    - uuid: 9bfa9482a8b048e4ac5e2134074ac778
+      expression: |
+        last(/icmp_availability/icmpping,#5)=1
+        and
+        avg(/icmp_availability/icmppingloss,#5)>{$AVG_PING_LOSS}
+        and
+        avg(/icmp_availability/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/icmp_availability/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+      name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      priority: AVERAGE
+      dependencies:
+        - name: 'Хост недоступен (ICMP)'
+          expression: 'max(/icmp_availability/icmpping,#3)=0'
+    - uuid: 5a21a8779c0f4ffcbca45572b1121327
+      expression: |
+        last(/icmp_availability/icmpping,#5)=1
+        and
+        avg(/icmp_availability/icmppingloss,#5)>{$WARN_PING_LOSS}
+        and
+        avg(/icmp_availability/icmppingloss,#5)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'avg(/icmp_availability/icmppingloss,#5)=0'
+      name: 'Средний процент потери пакетов ICMP свыше {$WARN_PING_LOSS} %'
+      opdata: 'Последнее значение:{ITEM.LASTVALUE2}'
+      status: DISABLED
+      priority: WARNING
+      dependencies:
+        - name: 'Средний процент потери пакетов ICMP свыше {$AVG_PING_LOSS} %'
+          expression: |
+            last(/icmp_availability/icmpping,#5)=1
+            and
+            avg(/icmp_availability/icmppingloss,#5)>{$AVG_PING_LOSS}
+            and
+            avg(/icmp_availability/icmppingloss,#5)<100
+          recovery_expression: 'avg(/icmp_availability/icmppingloss,#5)<{$AVG_PING_LOSS}-15'
+  graphs:
+    - uuid: f1dae9469640476cbfb449cd40eea75d
+      name: '1. ICMP loss'
+      show_triggers: 'NO'
+      graph_items:
+        - color: F44336
+          calc_fnc: ALL
+          item:
+            host: icmp_availability
+            key: icmppingloss
+    - uuid: 00e3901ca58e4f368496c6e40b07ed25
+      name: 'Время отклика ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: icmp_availability
+            key: icmppingsec
+    - uuid: 4e89031daf7348819c5757c0210e2b8f
+      name: 'Доступность ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: icmp_availability
+            key: icmpping
+    - uuid: e3c138db86854d528c7429469401707a
+      name: 'Процент потери пакетов ICMP'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: icmp_availability
+            key: icmppingloss

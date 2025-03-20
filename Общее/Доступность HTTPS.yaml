@@ -1,0 +1,47 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: fad0b20d285543ee95b06a013cff3132
+      name: 'by d.bogach'
+  templates:
+    - uuid: 76f55c436bde4639872fc872426e9d69
+      template: https_availability
+      name: 'Доступность HTTPS'
+      groups:
+        - name: 'by d.bogach'
+      items:
+        - uuid: 99379bb648814064bf9aa45f468a755d
+          name: 'Доступность HTTPS'
+          type: SIMPLE
+          key: 'net.tcp.service[https]'
+          history: 1w
+          trends: 90d
+          valuemap:
+            name: Доступность
+          triggers:
+            - uuid: 363e3eab2ce14c7bb3f62173fb429447
+              expression: 'max(/https_availability/net.tcp.service[https],#3)=0'
+              name: 'Хост недоступен (HTTPS)'
+              opdata: 'HTTPS{ITEM.LASTVALUE1}'
+              priority: DISASTER
+              manual_close: 'YES'
+      valuemaps:
+        - uuid: 8d9cccd887c14168bdb3c553adca8945
+          name: Доступность
+          mappings:
+            - value: '0'
+              newvalue: Недоступен
+            - value: '1'
+              newvalue: Доступен
+            - value: '2'
+              newvalue: Неизвестно
+  graphs:
+    - uuid: aaaef5431e754bb78dff163cc488ae55
+      name: 'Доступность HTTPS'
+      show_triggers: 'NO'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: https_availability
+            key: 'net.tcp.service[https]'
